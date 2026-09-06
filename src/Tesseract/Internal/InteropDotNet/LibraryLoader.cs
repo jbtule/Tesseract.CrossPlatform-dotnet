@@ -66,6 +66,16 @@ namespace InteropDotNet
             var baseDirectory = CustomSearchPath;
             if (!String.IsNullOrEmpty(baseDirectory)) {
                 Logger.TraceInformation("Checking custom search location '{0}' for '{1}' on platform {2}.", baseDirectory, fileName, platformName);
+                // CustomSearchPath is set explicitly by the caller, so it should
+                // mean exactly what it says: look here for the library. Check
+                // the path directly first, rather than unconditionally forcing
+                // a platform-name subfolder underneath it (that behavior is
+                // still useful for the automatic fallback locations below,
+                // which the caller doesn't control the layout of -- it's just
+                // surprising for a path the caller picked on purpose).
+                var directPath = Path.Combine(baseDirectory, fileName);
+                if (File.Exists(directPath))
+                    return logic.LoadLibrary(directPath);
                 return InternalLoadLibrary(baseDirectory, platformName, fileName);
             } else {
                 Logger.TraceInformation("Custom search path is not defined, skipping.");
