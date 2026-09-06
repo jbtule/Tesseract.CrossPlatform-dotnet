@@ -10,6 +10,23 @@ namespace InteropDotNet
     {
         public static string GetPlatformName()
         {
+#if NETCORE || NETSTANDARD
+            // IntPtr.Size alone can't tell x64 from arm64 (both are 8 bytes),
+            // so on runtimes that expose RuntimeInformation.ProcessArchitecture
+            // (i.e. everywhere but classic .NET Framework, which is x86/x64 only
+            // anyway) use the real process architecture instead.
+            switch (RuntimeInformation.ProcessArchitecture)
+            {
+                case Architecture.X86:
+                    return "x86";
+                case Architecture.X64:
+                    return "x64";
+                case Architecture.Arm:
+                    return "arm";
+                case Architecture.Arm64:
+                    return "arm64";
+            }
+#endif
             return IntPtr.Size == sizeof(int) ? "x86" : "x64";
         }
 
