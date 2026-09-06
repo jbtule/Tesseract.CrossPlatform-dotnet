@@ -163,6 +163,18 @@ namespace InteropDotNet
 
         private IntPtr InternalLoadLibrary(string baseDirectory, string platformName, string fileName)
         {
+            // Try the flat path first: `dotnet publish -r <rid>` (the standard,
+            // documented way to consume a RID-specific native NuGet package,
+            // self-contained or not) copies runtime assets straight into the
+            // output root alongside the app itself, NOT nested under a
+            // platform-name subfolder -- confirmed empirically, not assumed.
+            // Falls back to the legacy nested-by-platform-name layout for
+            // anyone relying on that (this is what all four automatic
+            // fallback locations use, so this one change covers all of them).
+            var flatPath = Path.Combine(baseDirectory, fileName);
+            if (File.Exists(flatPath))
+                return logic.LoadLibrary(flatPath);
+
             var fullPath = Path.Combine(baseDirectory, Path.Combine(platformName, fileName));
             return File.Exists(fullPath) ? logic.LoadLibrary(fullPath) : IntPtr.Zero;
         }
