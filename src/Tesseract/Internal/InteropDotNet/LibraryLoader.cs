@@ -43,6 +43,8 @@ namespace InteropDotNet
                                         
                     IntPtr dllHandle = CheckCustomSearchPath(fileName, platformName);
                     if (dllHandle == IntPtr.Zero)
+                        dllHandle = CheckNuGetRuntimesFolder(fileName, platformName);
+                    if (dllHandle == IntPtr.Zero)
                         dllHandle = CheckExecutingAssemblyDomain(fileName, platformName);
                     if (dllHandle == IntPtr.Zero)
                         dllHandle = CheckCurrentAppDomain(fileName, platformName);
@@ -82,6 +84,28 @@ namespace InteropDotNet
                 return IntPtr.Zero;
             }
 
+        }
+
+        /// <summary>
+        /// Checks the NuGet RID-graph convention -- "&lt;app base dir&gt;/runtimes/&lt;rid&gt;/native/&lt;file&gt;"
+        /// -- that `dotnet publish` (and single-RID build/run) populates automatically for any
+        /// referenced runtime package (e.g. Tesseract.Native). This is what makes native NuGet
+        /// runtime packages "just work" with no caller-side setup at all: the RID is computed
+        /// lazily right here, on first actual LoadLibrary call, not eagerly at startup.
+        /// </summary>
+        private IntPtr CheckNuGetRuntimesFolder(string fileName, string platformName)
+        {
+            var rid = SystemManager.GetRuntimeIdentifier();
+            if (String.IsNullOrEmpty(rid))
+            {
+                Logger.TraceInformation("Could not determine a NuGet RID for this process, skipping.");
+                return IntPtr.Zero;
+            }
+
+            var baseDirectory = Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory);
+            var fullPath = Path.Combine(baseDirectory, "runtimes", rid, "native", fileName);
+            Logger.TraceInformation("Checking NuGet runtimes folder '{0}' for '{1}' on platform {2}.", fullPath, fileName, platformName);
+            return File.Exists(fullPath) ? logic.LoadLibrary(fullPath) : IntPtr.Zero;
         }
 
         private IntPtr CheckExecutingAssemblyDomain(string fileName, string platformName)

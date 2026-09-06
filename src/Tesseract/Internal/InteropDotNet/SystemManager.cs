@@ -30,6 +30,41 @@ namespace InteropDotNet
             return IntPtr.Size == sizeof(int) ? "x86" : "x64";
         }
 
+        /// <summary>
+        /// Computes a NuGet-style Runtime Identifier ("win-x64", "linux-arm64", "osx-arm64",
+        /// etc.) from the actual OS + process architecture, for LibraryLoader's automatic
+        /// "runtimes/&lt;rid&gt;/native" fallback location. Returns null where this isn't
+        /// knowable (classic .NET Framework, or an OS/arch combination not recognized here) --
+        /// callers should treat that as "skip this check", not fail.
+        /// </summary>
+        public static string GetRuntimeIdentifier()
+        {
+#if NETCORE || NETSTANDARD
+            string os;
+            switch (GetOperatingSystem())
+            {
+                case OperatingSystem.Windows: os = "win"; break;
+                case OperatingSystem.Unix: os = "linux"; break;
+                case OperatingSystem.MacOSX: os = "osx"; break;
+                default: return null;
+            }
+
+            string arch;
+            switch (RuntimeInformation.ProcessArchitecture)
+            {
+                case Architecture.X86: arch = "x86"; break;
+                case Architecture.X64: arch = "x64"; break;
+                case Architecture.Arm: arch = "arm"; break;
+                case Architecture.Arm64: arch = "arm64"; break;
+                default: return null;
+            }
+
+            return os + "-" + arch;
+#else
+            return null;
+#endif
+        }
+
         public static OperatingSystem GetOperatingSystem()
         {
             // Environment.OSVersion.Platform detects MacOS as Unix in .net core environment
