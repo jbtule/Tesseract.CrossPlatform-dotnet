@@ -457,7 +457,7 @@ namespace Tesseract.Interop
         /// Finds the index of the color entry with the rank intensity.
         /// </summary>
         /// <returns>Returns 0 if OK; 1 on error.</returns>
-        [DllImport(Constants.LeptonicaDllName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "pixcmapCountGrayColors")]
+        [DllImport(Constants.LeptonicaDllName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "pixcmapGetRankIntensity")]
         public static extern int pixcmapGetRankIntensity(HandleRef cmap, float rankVal, out int index);
 
 
@@ -489,7 +489,15 @@ namespace Tesseract.Interop
 
         // colormap serialization
 
-        [DllImport(Constants.LeptonicaDllName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "pixcmapColorToGray")]
+        // NOTE: leptonica's real pixcmapToArrays(cmap, l_int32**, l_int32**, l_int32**, l_int32**)
+        // takes 4 out arrays (r/g/b/a), not the 3 declared here -- pre-existing signature
+        // mismatch, not fixed here since this method isn't called anywhere in this codebase
+        // (internal class, unreachable from outside this assembly either); only the EntryPoint
+        // -- previously wrongly aliased onto pixcmapColorToGray -- is fixed, since that one was
+        // actively breaking a wasm build (two different C# signatures can't share one wasm
+        // pinvoke-table entry, unlike on desktop where it silently pointed both callers at
+        // pixcmapColorToGray's implementation instead of pixcmapToArrays' own).
+        [DllImport(Constants.LeptonicaDllName, CallingConvention = CallingConvention.Cdecl, EntryPoint = "pixcmapToArrays")]
         public static extern int pixcmapToArrays(HandleRef cmap, out IntPtr redMap, out IntPtr blueMap, out IntPtr greenMap);
 
 
