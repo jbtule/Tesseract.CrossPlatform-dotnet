@@ -204,7 +204,7 @@ namespace Tesseract
                         Guard.Verify(_renderer._currentDocumentHandle == this, "Expected the Result Render's active document to be this document.");
 
                         // End the renderer
-                        Interop.TessApi.Native.ResultRendererEndDocument(_renderer._handle);
+                        Interop.TessApi.ResultRendererEndDocument(_renderer._handle);
                         _renderer._currentDocumentHandle = null;
                     }
                 }
@@ -255,7 +255,7 @@ namespace Tesseract
             // implicitly if required. This is why I've only made Page.Recognise internal not public.
             page.Recognize();
 
-            return Interop.TessApi.Native.ResultRendererAddImage(Handle, page.Engine.Handle) != 0;
+            return Interop.TessApi.ResultRendererAddImage(Handle, page.Engine.Handle) != 0;
         }
 
         /// <summary>
@@ -270,7 +270,7 @@ namespace Tesseract
             Guard.Verify(_currentDocumentHandle == null, "Cannot begin document \"{0}\" as another document is currently being processed which must be dispose off first.", title);
 
             IntPtr titlePtr = Marshal.StringToHGlobalAnsi(title);
-            if (Interop.TessApi.Native.ResultRendererBeginDocument(Handle, titlePtr) == 0)
+            if (Interop.TessApi.ResultRendererBeginDocument(Handle, titlePtr) == 0)
             {
                 // release the pointer first before throwing an error.
                 Marshal.FreeHGlobal(titlePtr);
@@ -293,7 +293,7 @@ namespace Tesseract
             {
                 VerifyNotDisposed();
 
-                return Interop.TessApi.Native.ResultRendererImageNum(Handle);
+                return Interop.TessApi.ResultRendererImageNum(Handle);
             }
         }
 
@@ -315,7 +315,7 @@ namespace Tesseract
             {
                 if (_handle.Handle != IntPtr.Zero)
                 {
-                    Interop.TessApi.Native.DeleteResultRenderer(_handle);
+                    Interop.TessApi.DeleteResultRenderer(_handle);
                     _handle = new HandleRef(this, IntPtr.Zero);
                 }
             }
@@ -326,7 +326,7 @@ namespace Tesseract
     {
         public TextResultRenderer(string outputFilename)
         {
-            var rendererHandle = Interop.TessApi.Native.TextRendererCreate(outputFilename);
+            var rendererHandle = Interop.TessApi.TextRendererCreate(outputFilename);
             Initialise(rendererHandle);
         }
     }
@@ -335,7 +335,7 @@ namespace Tesseract
     {
         public HOcrResultRenderer(string outputFilename, bool fontInfo = false)
         {
-            var rendererHandle = Interop.TessApi.Native.HOcrRendererCreate2(outputFilename, fontInfo ? 1 : 0);
+            var rendererHandle = Interop.TessApi.HOcrRendererCreate2(outputFilename, fontInfo ? 1 : 0);
             Initialise(rendererHandle);
         }
     }
@@ -344,7 +344,7 @@ namespace Tesseract
     {
         public UnlvResultRenderer(string outputFilename)
         {
-            var rendererHandle = Interop.TessApi.Native.UnlvRendererCreate(outputFilename);
+            var rendererHandle = Interop.TessApi.UnlvRendererCreate(outputFilename);
             Initialise(rendererHandle);
         }
     }
@@ -353,7 +353,7 @@ namespace Tesseract
     {
         public AltoResultRenderer(string outputFilename)
         {
-            var rendererHandle = Interop.TessApi.Native.AltoRendererCreate(outputFilename);
+            var rendererHandle = Interop.TessApi.AltoRendererCreate(outputFilename);
             Initialise(rendererHandle);
         }
     }
@@ -362,7 +362,7 @@ namespace Tesseract
     {
         public TsvResultRenderer(string outputFilename)
         {
-            var rendererHandle = Interop.TessApi.Native.TsvRendererCreate(outputFilename);
+            var rendererHandle = Interop.TessApi.TsvRendererCreate(outputFilename);
             Initialise(rendererHandle);
         }
     }
@@ -371,7 +371,7 @@ namespace Tesseract
     {
         public LSTMBoxResultRenderer(string outputFilename)
         {
-            var rendererHandle = Interop.TessApi.Native.LSTMBoxRendererCreate(outputFilename);
+            var rendererHandle = Interop.TessApi.LSTMBoxRendererCreate(outputFilename);
             Initialise(rendererHandle);
         }
     }
@@ -380,7 +380,7 @@ namespace Tesseract
     {
         public WordStrBoxResultRenderer(string outputFilename)
         {
-            var rendererHandle = Interop.TessApi.Native.WordStrBoxRendererCreate(outputFilename);
+            var rendererHandle = Interop.TessApi.WordStrBoxRendererCreate(outputFilename);
             Initialise(rendererHandle);
         }
     }
@@ -389,7 +389,7 @@ namespace Tesseract
     {
         public BoxResultRenderer(string outputFilename)
         {
-            var rendererHandle = Interop.TessApi.Native.BoxTextRendererCreate(outputFilename);
+            var rendererHandle = Interop.TessApi.BoxTextRendererCreate(outputFilename);
             Initialise(rendererHandle);
         }
     }
@@ -401,7 +401,7 @@ namespace Tesseract
         public PdfResultRenderer(string outputFilename, string fontDirectory, bool textonly)
         {
             var fontDirectoryHandle = Marshal.StringToHGlobalAnsi(fontDirectory);
-            var rendererHandle = Interop.TessApi.Native.PDFRendererCreate(outputFilename, fontDirectoryHandle, textonly ? 1 : 0);
+            var rendererHandle = Interop.TessApi.PDFRendererCreate(outputFilename, fontDirectoryHandle, textonly ? 1 : 0);
 
             Initialise(rendererHandle);
         }

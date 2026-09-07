@@ -1,36 +1,52 @@
-﻿//  Copyright (c) 2014 Andrey Akinshin
+//  Copyright (c) 2014 Andrey Akinshin
 //  Project URL: https://github.com/AndreyAkinshin/InteropDotNet
 //  Distributed under the MIT License: http://opensource.org/licenses/MIT
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using Tesseract;
 using Tesseract.Internal;
 
 namespace InteropDotNet
 {
-    public sealed class LibraryLoader
+    /// <summary>
+    /// Resolves and loads the native tesseract/leptonica libraries, and serves as the
+    /// <see cref="DllImportResolver"/> registered for this assembly via
+    /// <see cref="NativeLibrary.SetDllImportResolver"/> -- see <see cref="NativeLibraryResolver"/>
+    /// for registration. Replaces the previous OS-specific dlopen/LoadLibrary P/Invoke
+    /// wrappers (<c>ILibraryLoaderLogic</c> and friends) with <see cref="NativeLibrary"/>, which
+    /// already abstracts that cross-platform since .NET Core 3.0.
+    /// </summary>
+    public static class LibraryLoader
     {
-        readonly ILibraryLoaderLogic logic;
+        private static readonly object syncLock = new object();
+        private static readonly Dictionary<string, IntPtr> loadedAssemblies = new Dictionary<string, IntPtr>();
+        private static string customSearchPath;
 
-        LibraryLoader(ILibraryLoaderLogic logic)
-        {
-            this.logic = logic;
-        }
-
-        private readonly object syncLock = new object();        
-        private readonly Dictionary<string, IntPtr> loadedAssemblies = new Dictionary<string, IntPtr>();
-        private string customSearchPath;
-
-        public string CustomSearchPath
+        public static string CustomSearchPath
         {
             get { return customSearchPath; }
             set { customSearchPath = value; }
         }
 
-        public IntPtr LoadLibrary(string fileName, string platformName = null)
-        {            
+        /// <summary>
+        /// The <see cref="DllImportResolver"/> callback registered for this assembly. Only
+        /// resolves the tesseract/leptonica library names this package ships; returns
+        /// <see cref="IntPtr.Zero"/> for anything else so the runtime's own default resolution
+        /// still applies to it.
+        /// </summary>
+        internal static IntPtr Resolve(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+        {
+            if (libraryName != Tesseract.Interop.Constants.TesseractDllName && libraryName != Tesseract.Interop.Constants.LeptonicaDllName)
+                return IntPtr.Zero;
+
+            return LoadLibrary(libraryName);
+        }
+
+        public static IntPtr LoadLibrary(string fileName, string platformName = null)
+        {
             fileName = FixUpLibraryName(fileName);
             lock (syncLock)
             {
@@ -38,9 +54,9 @@ namespace InteropDotNet
                 {
                     if (platformName == null)
                         platformName = SystemManager.GetPlatformName();
-                    
+
                     Logger.TraceInformation("Current platform: " + platformName);
-                                        
+
                     IntPtr dllHandle = CheckCustomSearchPath(fileName, platformName);
                     if (dllHandle == IntPtr.Zero)
                         dllHandle = CheckNuGetRuntimesFolder(fileName, platformName);
@@ -56,6 +72,11 @@ namespace InteropDotNet
                     if (dllHandle != IntPtr.Zero)
                         loadedAssemblies[fileName] = dllHandle;
                     else
+                        // Thrown directly here, rather than returning IntPtr.Zero from Resolve()
+                        // and letting NativeLibrary.SetDllImportResolver's caller fall through to
+                        // the runtime's own default probing: that would replace this diagnostic
+                        // message with a generic DllNotFoundException after redundant extra
+                        // probing that's already been done above.
                         throw new DllNotFoundException(string.Format("Failed to find library \"{0}\" for platform {1}.", fileName, platformName));
                 }
 
@@ -63,7 +84,7 @@ namespace InteropDotNet
             }
         }
 
-        private IntPtr CheckCustomSearchPath(string fileName, string platformName)
+        private static IntPtr CheckCustomSearchPath(string fileName, string platformName)
         {
             var baseDirectory = CustomSearchPath;
             if (!String.IsNullOrEmpty(baseDirectory)) {
@@ -76,8 +97,8 @@ namespace InteropDotNet
                 // which the caller doesn't control the layout of -- it's just
                 // surprising for a path the caller picked on purpose).
                 var directPath = Path.Combine(baseDirectory, fileName);
-                if (File.Exists(directPath))
-                    return logic.LoadLibrary(directPath);
+                if (File.Exists(directPath) && NativeLibrary.TryLoad(directPath, out var handle))
+                    return handle;
                 return InternalLoadLibrary(baseDirectory, platformName, fileName);
             } else {
                 Logger.TraceInformation("Custom search path is not defined, skipping.");
@@ -93,7 +114,7 @@ namespace InteropDotNet
         /// runtime packages "just work" with no caller-side setup at all: the RID is computed
         /// lazily right here, on first actual LoadLibrary call, not eagerly at startup.
         /// </summary>
-        private IntPtr CheckNuGetRuntimesFolder(string fileName, string platformName)
+        private static IntPtr CheckNuGetRuntimesFolder(string fileName, string platformName)
         {
             var rid = SystemManager.GetRuntimeIdentifier();
             if (String.IsNullOrEmpty(rid))
@@ -105,10 +126,10 @@ namespace InteropDotNet
             var baseDirectory = Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory);
             var fullPath = Path.Combine(baseDirectory, "runtimes", rid, "native", fileName);
             Logger.TraceInformation("Checking NuGet runtimes folder '{0}' for '{1}' on platform {2}.", fullPath, fileName, platformName);
-            return File.Exists(fullPath) ? logic.LoadLibrary(fullPath) : IntPtr.Zero;
+            return File.Exists(fullPath) && NativeLibrary.TryLoad(fullPath, out var handle) ? handle : IntPtr.Zero;
         }
 
-        private IntPtr CheckExecutingAssemblyDomain(string fileName, string platformName)
+        private static IntPtr CheckExecutingAssemblyDomain(string fileName, string platformName)
         {
             var executingAssembly = Assembly.GetExecutingAssembly();
             if(executingAssembly == null) {
@@ -121,7 +142,7 @@ namespace InteropDotNet
             return InternalLoadLibrary(baseDirectory, platformName, fileName);
         }
 
-        private IntPtr CheckCurrentAppDomain(string fileName, string platformName)
+        private static IntPtr CheckCurrentAppDomain(string fileName, string platformName)
         {
             var baseDirectory = Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory);
             Logger.TraceInformation("Checking current application domain location '{0}' for '{1}' on platform {2}.", baseDirectory, fileName, platformName);
@@ -133,7 +154,7 @@ namespace InteropDotNet
         /// </summary>
         /// <remarks>
         /// Note that this makes a couple of assumptions these being:
-        /// 
+        ///
         /// <list type="bullet">
         ///     <item>That the current application domain's location for web applications corresponds to the web applications root directory.</item>
         ///     <item>That the tesseract\leptonica dlls reside in the corresponding x86 or x64 directories in the bin directory under the apps root directory.</item>
@@ -142,7 +163,7 @@ namespace InteropDotNet
         /// <param name="fileName"></param>
         /// <param name="platformName"></param>
         /// <returns></returns>
-        private IntPtr CheckCurrentAppDomainBin(string fileName, string platformName)
+        private static IntPtr CheckCurrentAppDomainBin(string fileName, string platformName)
         {
             var baseDirectory = Path.Combine(Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory), "bin");
             if (Directory.Exists(baseDirectory)) {
@@ -154,14 +175,14 @@ namespace InteropDotNet
             }
         }
 
-        private IntPtr CheckWorkingDirecotry(string fileName, string platformName)
+        private static IntPtr CheckWorkingDirecotry(string fileName, string platformName)
         {
             var baseDirectory = Path.GetFullPath(Environment.CurrentDirectory);
             Logger.TraceInformation("Checking working directory '{0}' for '{1}' on platform {2}.", baseDirectory, fileName, platformName);
             return InternalLoadLibrary(baseDirectory, platformName, fileName);
         }
 
-        private IntPtr InternalLoadLibrary(string baseDirectory, string platformName, string fileName)
+        private static IntPtr InternalLoadLibrary(string baseDirectory, string platformName, string fileName)
         {
             // Try the flat path first: `dotnet publish -r <rid>` (the standard,
             // documented way to consume a RID-specific native NuGet package,
@@ -172,89 +193,31 @@ namespace InteropDotNet
             // anyone relying on that (this is what all four automatic
             // fallback locations use, so this one change covers all of them).
             var flatPath = Path.Combine(baseDirectory, fileName);
-            if (File.Exists(flatPath))
-                return logic.LoadLibrary(flatPath);
+            if (File.Exists(flatPath) && NativeLibrary.TryLoad(flatPath, out var flatHandle))
+                return flatHandle;
 
             var fullPath = Path.Combine(baseDirectory, Path.Combine(platformName, fileName));
-            return File.Exists(fullPath) ? logic.LoadLibrary(fullPath) : IntPtr.Zero;
+            return File.Exists(fullPath) && NativeLibrary.TryLoad(fullPath, out var nestedHandle) ? nestedHandle : IntPtr.Zero;
         }
 
-        public bool FreeLibrary(string fileName)
+        private static string FixUpLibraryName(string fileName)
         {
-            fileName = FixUpLibraryName(fileName);
-            lock (syncLock)
-            {
-                if (!IsLibraryLoaded(fileName))
-                {
-                    Logger.TraceWarning("Failed to free library \"{0}\" because it is not loaded", fileName);
-                    return false;
-                }
-                if (logic.FreeLibrary(loadedAssemblies[fileName]))
-                {
-                    loadedAssemblies.Remove(fileName);
-                    return true;
-                }
-                return false;
-            }
-        }
+            if (string.IsNullOrEmpty(fileName))
+                return fileName;
 
-        public IntPtr GetProcAddress(IntPtr dllHandle, string name)
-        {
-            IntPtr procAddress = logic.GetProcAddress(dllHandle, name);
-            if(procAddress == IntPtr.Zero)
+            if (SystemManager.GetOperatingSystem() == OperatingSystem.Windows)
             {
-                throw new LoadLibraryException(String.Format("Failed to load proc {0}", name));
+                if (!fileName.EndsWith(".dll", StringComparison.OrdinalIgnoreCase))
+                    fileName += ".dll";
+                return fileName;
             }
 
-            return procAddress;
+            var extension = SystemManager.GetOperatingSystem() == OperatingSystem.MacOSX ? ".dylib" : ".so";
+            if (!fileName.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
+                fileName += extension;
+            if (!fileName.StartsWith("lib", StringComparison.OrdinalIgnoreCase))
+                fileName = "lib" + fileName;
+            return fileName;
         }
-
-        public bool IsLibraryLoaded(string fileName)
-        {
-            fileName = FixUpLibraryName(fileName);
-            lock (syncLock)
-                return loadedAssemblies.ContainsKey(fileName);
-        }
-
-        private string FixUpLibraryName(string fileName)
-        {
-            return logic.FixUpLibraryName(fileName);
-
-        }
-
-        #region Singleton
-
-        private static LibraryLoader instance;
-
-        public static LibraryLoader Instance
-        {
-            get
-            {
-                if (instance == null)
-                {
-                    var operatingSystem = SystemManager.GetOperatingSystem();
-                    switch (operatingSystem)
-                    {
-                        case OperatingSystem.Windows:
-                            Logger.TraceInformation("Current OS: Windows");
-                            instance = new LibraryLoader(new WindowsLibraryLoaderLogic());
-                            break;
-                        case OperatingSystem.Unix:
-                            Logger.TraceInformation("Current OS: Unix");
-                            instance = new LibraryLoader(new UnixLibraryLoaderLogic());
-                            break;
-                        case OperatingSystem.MacOSX:
-                            Logger.TraceInformation("Current OS: MacOsX");
-                            instance = new LibraryLoader(new UnixLibraryLoaderLogic());
-                            break;
-                        default:
-                            throw new Exception("Unsupported operation system");
-                    }
-                }
-                return instance;
-            }
-        }
-
-        #endregion
     }
 }

@@ -10,11 +10,8 @@ namespace InteropDotNet
     {
         public static string GetPlatformName()
         {
-#if NETCORE || NETSTANDARD
             // IntPtr.Size alone can't tell x64 from arm64 (both are 8 bytes),
-            // so on runtimes that expose RuntimeInformation.ProcessArchitecture
-            // (i.e. everywhere but classic .NET Framework, which is x86/x64 only
-            // anyway) use the real process architecture instead.
+            // so use the real process architecture instead.
             switch (RuntimeInformation.ProcessArchitecture)
             {
                 case Architecture.X86:
@@ -25,9 +22,9 @@ namespace InteropDotNet
                     return "arm";
                 case Architecture.Arm64:
                     return "arm64";
+                default:
+                    return IntPtr.Size == sizeof(int) ? "x86" : "x64";
             }
-#endif
-            return IntPtr.Size == sizeof(int) ? "x86" : "x64";
         }
 
         /// <summary>
@@ -39,7 +36,6 @@ namespace InteropDotNet
         /// </summary>
         public static string GetRuntimeIdentifier()
         {
-#if NETCORE || NETSTANDARD
             string os;
             switch (GetOperatingSystem())
             {
@@ -60,41 +56,18 @@ namespace InteropDotNet
             }
 
             return os + "-" + arch;
-#else
-            return null;
-#endif
         }
 
         public static OperatingSystem GetOperatingSystem()
         {
-            // Environment.OSVersion.Platform detects MacOS as Unix in .net core environment
-#if NETCORE || NETSTANDARD
             if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 return OperatingSystem.Windows;
             if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 return OperatingSystem.Unix;
             if(RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                 return OperatingSystem.MacOSX;
-            
+
             return OperatingSystem.Unknown;
-#else
-            var pid = (int)Environment.OSVersion.Platform;
-            switch (pid)
-            {
-                case (int)PlatformID.Win32NT:
-                case (int)PlatformID.Win32S:
-                case (int)PlatformID.Win32Windows:
-                case (int)PlatformID.WinCE:
-                    return OperatingSystem.Windows;
-                case (int)PlatformID.Unix:
-                case 128:
-                    return OperatingSystem.Unix;
-                case (int)PlatformID.MacOSX:
-                    return OperatingSystem.MacOSX;
-                default:
-                    return OperatingSystem.Unknown;
-            }
-#endif
         }
     }
 

@@ -178,7 +178,7 @@ namespace Tesseract
             Guard.RequireNotNullOrEmpty("language", language);
 
             DefaultPageSegMode = PageSegMode.Auto;
-            handle = new HandleRef(this, Interop.TessApi.Native.BaseApiCreate());
+            handle = new HandleRef(this, Interop.TessApi.BaseApiCreate());
 
             Initialise(datapath, language, engineMode, configFiles, initialOptions, setOnlyNonDebugVariables);
         }
@@ -261,11 +261,11 @@ namespace Tesseract
             processCount++;
 
             var actualPageSegmentMode = pageSegMode.HasValue ? pageSegMode.Value : DefaultPageSegMode;
-            Interop.TessApi.Native.BaseAPISetPageSegMode(handle, actualPageSegmentMode);
-            Interop.TessApi.Native.BaseApiSetImage(handle, image.Handle);
+            Interop.TessApi.BaseAPISetPageSegMode(handle, actualPageSegmentMode);
+            Interop.TessApi.BaseApiSetImage(handle, image.Handle);
             if (!String.IsNullOrEmpty(inputName))
             {
-                Interop.TessApi.Native.BaseApiSetInputName(handle, inputName);
+                Interop.TessApi.BaseApiSetInputName(handle, inputName);
             }
             var page = new Page(this, image, inputName, region, actualPageSegmentMode);
             page.Disposed += OnIteratorDisposed;
@@ -276,7 +276,7 @@ namespace Tesseract
         {
             if (handle.Handle != IntPtr.Zero)
             {
-                Interop.TessApi.Native.BaseApiDelete(handle);
+                Interop.TessApi.BaseApiDelete(handle);
                 handle = new HandleRef(this, IntPtr.Zero);
             }
         }
@@ -416,7 +416,7 @@ namespace Tesseract
         public bool TryGetBoolVariable(string name, out bool value)
         {
             int val;
-            if (Interop.TessApi.Native.BaseApiGetBoolVariable(handle, name, out val) != 0)
+            if (Interop.TessApi.BaseApiGetBoolVariable(handle, name, out val) != 0)
             {
                 value = (val != 0);
                 return true;
@@ -436,7 +436,7 @@ namespace Tesseract
         /// <returns>Returns <c>True</c> if successful; otherwise <c>False</c>.</returns>
         public bool TryGetDoubleVariable(string name, out double value)
         {
-            return Interop.TessApi.Native.BaseApiGetDoubleVariable(handle, name, out value) != 0;
+            return Interop.TessApi.BaseApiGetDoubleVariable(handle, name, out value) != 0;
         }
 
         /// <summary>
@@ -447,7 +447,7 @@ namespace Tesseract
         /// <returns>Returns <c>True</c> if successful; otherwise <c>False</c>.</returns>
         public bool TryGetIntVariable(string name, out int value)
         {
-            return Interop.TessApi.Native.BaseApiGetIntVariable(handle, name, out value) != 0;
+            return Interop.TessApi.BaseApiGetIntVariable(handle, name, out value) != 0;
         }
 
         /// <summary>
@@ -469,7 +469,7 @@ namespace Tesseract
         /// <returns></returns>
         public bool TryPrintVariablesToFile(string filename)
         {
-            return Interop.TessApi.Native.BaseApiPrintVariablesToFile(handle, filename) != 0;
+            return Interop.TessApi.BaseApiPrintVariablesToFile(handle, filename) != 0;
         }
 
         #endregion Config

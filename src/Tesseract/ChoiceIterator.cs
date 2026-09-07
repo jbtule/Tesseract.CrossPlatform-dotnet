@@ -24,7 +24,7 @@ namespace Tesseract
             VerifyNotDisposed();
             if (_handleRef.Handle == IntPtr.Zero)
                 return false;
-            return Interop.TessApi.Native.ChoiceIteratorNext(_handleRef) != 0;
+            return Interop.TessApi.ChoiceIteratorNext(_handleRef) != 0;
         }
 
         /// <summary>
@@ -40,7 +40,7 @@ namespace Tesseract
             if (_handleRef.Handle == IntPtr.Zero)
                 return 0f;
 
-            return Interop.TessApi.Native.ChoiceIteratorGetConfidence(_handleRef);
+            return Interop.TessApi.ChoiceIteratorGetConfidence(_handleRef);
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace Tesseract
         {
             if (_handleRef.Handle != IntPtr.Zero)
             {
-                Interop.TessApi.Native.ChoiceIteratorDelete(_handleRef);
+                Interop.TessApi.ChoiceIteratorDelete(_handleRef);
             }
         }
     }

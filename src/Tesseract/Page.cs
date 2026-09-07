@@ -65,7 +65,7 @@ namespace Tesseract
                     regionOfInterest = value;
 
                     // update region of interest in image
-                    Interop.TessApi.Native.BaseApiSetRectangle(Engine.Handle, regionOfInterest.X1, regionOfInterest.Y1, regionOfInterest.Width, regionOfInterest.Height);
+                    Interop.TessApi.BaseApiSetRectangle(Engine.Handle, regionOfInterest.X1, regionOfInterest.Y1, regionOfInterest.Width, regionOfInterest.Height);
 
                     // request rerun of recognition on the next call that requires recognition
                     runRecognitionPhase = false;
@@ -81,7 +81,7 @@ namespace Tesseract
         {
             Recognize();
 
-            var pixHandle = Interop.TessApi.Native.BaseAPIGetThresholdedImage(Engine.Handle);
+            var pixHandle = Interop.TessApi.BaseAPIGetThresholdedImage(Engine.Handle);
             if (pixHandle == IntPtr.Zero) {
                 throw new TesseractException("Failed to get thresholded image.");
             }
@@ -97,7 +97,7 @@ namespace Tesseract
         {
             Guard.Verify(PageSegmentMode != PageSegMode.OsdOnly, "Cannot analyse image layout when using OSD only page segmentation, please use DetectBestOrientation instead.");
 
-            var resultIteratorHandle = Interop.TessApi.Native.BaseAPIAnalyseLayout(Engine.Handle);
+            var resultIteratorHandle = Interop.TessApi.BaseAPIAnalyseLayout(Engine.Handle);
             return new PageIterator(this, resultIteratorHandle);
         }
 
@@ -108,7 +108,7 @@ namespace Tesseract
         public ResultIterator GetIterator()
         {
             Recognize();
-            var resultIteratorHandle = Interop.TessApi.Native.BaseApiGetIterator(Engine.Handle);
+            var resultIteratorHandle = Interop.TessApi.BaseApiGetIterator(Engine.Handle);
             return new ResultIterator(this, resultIteratorHandle);
         }
 
@@ -217,7 +217,7 @@ namespace Tesseract
         public float GetMeanConfidence()
         {
             Recognize();
-            return Interop.TessApi.Native.BaseAPIMeanTextConf(Engine.Handle) / 100.0f;
+            return Interop.TessApi.BaseAPIMeanTextConf(Engine.Handle) / 100.0f;
         }
 
         /// <summary>
@@ -227,24 +227,24 @@ namespace Tesseract
         /// <returns></returns>
         public List<Rectangle> GetSegmentedRegions(PageIteratorLevel pageIteratorLevel)
         {
-            var boxArray = Interop.TessApi.Native.BaseAPIGetComponentImages(Engine.Handle, pageIteratorLevel, Interop.Constants.TRUE, IntPtr.Zero, IntPtr.Zero);
-            int boxCount = Interop.LeptonicaApi.Native.boxaGetCount(new HandleRef(this, boxArray));
+            var boxArray = Interop.TessApi.BaseAPIGetComponentImages(Engine.Handle, pageIteratorLevel, Interop.Constants.TRUE, IntPtr.Zero, IntPtr.Zero);
+            int boxCount = Interop.LeptonicaApi.boxaGetCount(new HandleRef(this, boxArray));
 
             List<Rectangle> boxList = new List<Rectangle>();
 
             for (int i = 0; i < boxCount; i++) {
-                var box = Interop.LeptonicaApi.Native.boxaGetBox(new HandleRef(this, boxArray), i, PixArrayAccessType.Clone);
+                var box = Interop.LeptonicaApi.boxaGetBox(new HandleRef(this, boxArray), i, PixArrayAccessType.Clone);
                 if (box == IntPtr.Zero) {
                     continue;
                 }
 
                 int px, py, pw, ph;
-                Interop.LeptonicaApi.Native.boxGetGeometry(new HandleRef(this, box), out px, out py, out pw, out ph);
+                Interop.LeptonicaApi.boxGetGeometry(new HandleRef(this, box), out px, out py, out pw, out ph);
                 boxList.Add(new Rectangle(px, py, pw, ph));
-                Interop.LeptonicaApi.Native.boxDestroy(ref box);
+                Interop.LeptonicaApi.boxDestroy(ref box);
             }
 
-            Interop.LeptonicaApi.Native.boxaDestroy(ref boxArray);
+            Interop.LeptonicaApi.boxaDestroy(ref boxArray);
 
             return boxList;
         }
@@ -320,7 +320,7 @@ namespace Tesseract
             IntPtr script_nameHandle;
             float script_conf;
 
-            if (Interop.TessApi.Native.TessBaseAPIDetectOrientationScript(Engine.Handle, out orient_deg, out orient_conf, out script_nameHandle, out script_conf) != 0)
+            if (Interop.TessApi.TessBaseAPIDetectOrientationScript(Engine.Handle, out orient_deg, out orient_conf, out script_nameHandle, out script_conf) != 0)
             {
                 orientation = orient_deg;
                 confidence = orient_conf;
@@ -344,7 +344,7 @@ namespace Tesseract
         {
             Guard.Verify(PageSegmentMode != PageSegMode.OsdOnly, "Cannot OCR image when using OSD only page segmentation, please use DetectBestOrientation instead.");
             if (!runRecognitionPhase) {
-                if (Interop.TessApi.Native.BaseApiRecognize(Engine.Handle, new HandleRef(this, IntPtr.Zero)) != 0) {
+                if (Interop.TessApi.BaseApiRecognize(Engine.Handle, new HandleRef(this, IntPtr.Zero)) != 0) {
                     throw new InvalidOperationException("Recognition of image failed.");
                 }
 
@@ -369,7 +369,7 @@ namespace Tesseract
         protected override void Dispose(bool disposing)
         {
             if (disposing) {
-                Interop.TessApi.Native.BaseAPIClear(Engine.Handle);
+                Interop.TessApi.BaseAPIClear(Engine.Handle);
             }
         }
     }
