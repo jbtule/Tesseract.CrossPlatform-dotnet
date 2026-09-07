@@ -5,10 +5,14 @@ A .NET wrapper for [tesseract-ocr] 5.2.0.
 This is [jbtule](https://github.com/jbtule)'s fork of
 [charlesw/tesseract](https://github.com/charlesw/tesseract), owned
 independently going forward rather than staged as patches for an eventual
-upstream PR -- upstream hasn't been updated in about 2 years, and planned
-changes here (dropping .NET Framework/netstandard2.0 support, replacing the
-Reflection.Emit-based interop layer) go beyond what's realistic to get
-merged upstream anyway.
+upstream PR -- upstream hasn't been updated in about 2 years, and planned changes here go
+beyond what's realistic to get merged upstream anyway: retargeting from
+`netstandard2.0;net47;net48` to `net8.0;net9.0;net10.0` only, and replacing
+the Reflection.Emit-based interop layer (`RuntimeDllImportAttribute` /
+`InteropRuntimeImplementer`) with plain `[DllImport]` +
+`NativeLibrary.SetDllImportResolver` -- not yet started; see
+[jbtule/tesseract-nuget-platforms](https://github.com/jbtule/tesseract-nuget-platforms)'s
+README ("Backlog: modernize the interop layer") for the full scope.
 
 It's built and packaged, alongside prebuilt cross-platform native
 tesseract/leptonica binaries, by
