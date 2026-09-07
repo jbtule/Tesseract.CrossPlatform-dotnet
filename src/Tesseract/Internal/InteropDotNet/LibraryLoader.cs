@@ -129,6 +129,16 @@ namespace InteropDotNet
             return File.Exists(fullPath) && NativeLibrary.TryLoad(fullPath, out var handle) ? handle : IntPtr.Zero;
         }
 
+        // Assembly.Location always returns "" for a single-file/NativeAOT publish (flagged by
+        // the IL3000 trim analyzer) -- there's no on-disk assembly file to report a path for.
+        // Suppressed rather than avoided: this method's whole purpose is covering the case where
+        // this assembly's own file lives somewhere other than the app's base directory (e.g. a
+        // shared lib folder), which legitimately needs .Location; the empty-Location guard below
+        // just turns "nothing to report" into a clean no-op instead of a bogus relative path,
+        // for the single-file/AOT case where CheckCurrentAppDomain (AppDomain.BaseDirectory)
+        // already covers the app's own directory anyway.
+        [System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage("SingleFile", "IL3000",
+            Justification = "Guarded by the IsNullOrEmpty check immediately below; single-file/AOT publishes just skip this check.")]
         private static IntPtr CheckExecutingAssemblyDomain(string fileName, string platformName)
         {
             var executingAssembly = Assembly.GetExecutingAssembly();
@@ -137,7 +147,14 @@ namespace InteropDotNet
                 return IntPtr.Zero;
             }
 
-            var baseDirectory = Path.GetDirectoryName(executingAssembly.Location);
+            var location = executingAssembly.Location;
+            if (string.IsNullOrEmpty(location))
+            {
+                Logger.TraceInformation("Executing assembly has no on-disk location (single-file/AOT publish), skipping.");
+                return IntPtr.Zero;
+            }
+
+            var baseDirectory = Path.GetDirectoryName(location);
             Logger.TraceInformation("Checking executing application domain location '{0}' for '{1}' on platform {2}.", baseDirectory, fileName, platformName);
             return InternalLoadLibrary(baseDirectory, platformName, fileName);
         }
