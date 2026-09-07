@@ -1,5 +1,29 @@
 A .NET wrapper for [tesseract-ocr] 5.2.0.
 
+## About this fork
+
+This is [jbtule](https://github.com/jbtule)'s fork of
+[charlesw/tesseract](https://github.com/charlesw/tesseract), owned
+independently going forward rather than staged as patches for an eventual
+upstream PR -- upstream hasn't been updated in about 2 years, and planned
+changes here (dropping .NET Framework/netstandard2.0 support, replacing the
+Reflection.Emit-based interop layer) go beyond what's realistic to get
+merged upstream anyway.
+
+It's built and packaged, alongside prebuilt cross-platform native
+tesseract/leptonica binaries, by
+[jbtule/tesseract-nuget-platforms](https://github.com/jbtule/tesseract-nuget-platforms)
+into the `Tesseract.CrossPlatform` and `Tesseract.Native` NuGet packages --
+see that repo for usage, package details, and the list of fixes made here
+(arm64 platform detection, native library search order, generic native
+library names). If you're consuming this via NuGet, use those packages
+instead of building from this repo directly.
+
+Everything below this section is upstream's original README and may not
+reflect this fork's actual setup requirements (e.g. this fork doesn't
+require a separately-installed Visual Studio runtime -- native binaries are
+self-contained and resolved via `Tesseract.Native`).
+
 ## Dependencies
 
 ### Visual Studio 2019 x86 and x64 Runtimes 
