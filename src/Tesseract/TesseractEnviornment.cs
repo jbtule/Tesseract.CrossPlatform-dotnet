@@ -11,7 +11,11 @@ namespace Tesseract
         /// Gets or sets a search path that will be checked first when attempting to load the Tesseract and Leptonica dlls.
         /// </summary>
         /// <remarks>
-        /// This search path should not include the platform component as this will automatically be appended to the string based on the detected platform.
+        /// The library is looked for directly in this folder first (i.e. "&lt;CustomSearchPath&gt;/libtesseract.so").
+        /// If it isn't found there, a platform component ("x86", "x64", or "arm64" -- reflecting the actual
+        /// process architecture on .NET Core/.NET 5+, "x86"/"x64" only on classic .NET Framework) is appended
+        /// and checked as a fallback, for compatibility with the legacy convention of nesting binaries by
+        /// platform underneath this path.
         /// </remarks>
         public static string CustomSearchPath
         {

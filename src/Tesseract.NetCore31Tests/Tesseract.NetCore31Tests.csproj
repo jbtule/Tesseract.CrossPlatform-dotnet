@@ -213,6 +213,10 @@
   </Target>
 
   <Target Name="SymlinkMacOSDependencies" AfterTargets="AfterBuild" Condition=" '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' ">
+    <!-- Apple Silicon: Homebrew installs to /opt/homebrew, and the process architecture is reported as arm64. -->
+    <Exec Command="ln -sf /opt/homebrew/lib/liblept.dylib $(OutDir)arm64/libleptonica-1.82.0.dylib" />
+    <Exec Command="ln -sf /opt/homebrew/lib/libtesseract.dylib $(OutDir)arm64/libtesseract50.dylib" />
+    <!-- Intel: Homebrew installs to /usr/local. -->
     <Exec Command="ln -sf /usr/local/lib/liblept.dylib $(OutDir)x64/libleptonica-1.82.0.dylib" />
     <Exec Command="ln -sf /usr/local/lib/libtesseract.dylib $(OutDir)x64/libtesseract50.dylib" />
   </Target>

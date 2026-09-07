@@ -43,6 +43,8 @@ namespace InteropDotNet
                                         
                     IntPtr dllHandle = CheckCustomSearchPath(fileName, platformName);
                     if (dllHandle == IntPtr.Zero)
+                        dllHandle = CheckNuGetRuntimesFolder(fileName, platformName);
+                    if (dllHandle == IntPtr.Zero)
                         dllHandle = CheckExecutingAssemblyDomain(fileName, platformName);
                     if (dllHandle == IntPtr.Zero)
                         dllHandle = CheckCurrentAppDomain(fileName, platformName);
@@ -66,12 +68,44 @@ namespace InteropDotNet
             var baseDirectory = CustomSearchPath;
             if (!String.IsNullOrEmpty(baseDirectory)) {
                 Logger.TraceInformation("Checking custom search location '{0}' for '{1}' on platform {2}.", baseDirectory, fileName, platformName);
+                // CustomSearchPath is set explicitly by the caller, so it should
+                // mean exactly what it says: look here for the library. Check
+                // the path directly first, rather than unconditionally forcing
+                // a platform-name subfolder underneath it (that behavior is
+                // still useful for the automatic fallback locations below,
+                // which the caller doesn't control the layout of -- it's just
+                // surprising for a path the caller picked on purpose).
+                var directPath = Path.Combine(baseDirectory, fileName);
+                if (File.Exists(directPath))
+                    return logic.LoadLibrary(directPath);
                 return InternalLoadLibrary(baseDirectory, platformName, fileName);
             } else {
                 Logger.TraceInformation("Custom search path is not defined, skipping.");
                 return IntPtr.Zero;
             }
 
+        }
+
+        /// <summary>
+        /// Checks the NuGet RID-graph convention -- "&lt;app base dir&gt;/runtimes/&lt;rid&gt;/native/&lt;file&gt;"
+        /// -- that `dotnet publish` (and single-RID build/run) populates automatically for any
+        /// referenced runtime package (e.g. Tesseract.Native). This is what makes native NuGet
+        /// runtime packages "just work" with no caller-side setup at all: the RID is computed
+        /// lazily right here, on first actual LoadLibrary call, not eagerly at startup.
+        /// </summary>
+        private IntPtr CheckNuGetRuntimesFolder(string fileName, string platformName)
+        {
+            var rid = SystemManager.GetRuntimeIdentifier();
+            if (String.IsNullOrEmpty(rid))
+            {
+                Logger.TraceInformation("Could not determine a NuGet RID for this process, skipping.");
+                return IntPtr.Zero;
+            }
+
+            var baseDirectory = Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory);
+            var fullPath = Path.Combine(baseDirectory, "runtimes", rid, "native", fileName);
+            Logger.TraceInformation("Checking NuGet runtimes folder '{0}' for '{1}' on platform {2}.", fullPath, fileName, platformName);
+            return File.Exists(fullPath) ? logic.LoadLibrary(fullPath) : IntPtr.Zero;
         }
 
         private IntPtr CheckExecutingAssemblyDomain(string fileName, string platformName)
@@ -129,6 +163,18 @@ namespace InteropDotNet
 
         private IntPtr InternalLoadLibrary(string baseDirectory, string platformName, string fileName)
         {
+            // Try the flat path first: `dotnet publish -r <rid>` (the standard,
+            // documented way to consume a RID-specific native NuGet package,
+            // self-contained or not) copies runtime assets straight into the
+            // output root alongside the app itself, NOT nested under a
+            // platform-name subfolder -- confirmed empirically, not assumed.
+            // Falls back to the legacy nested-by-platform-name layout for
+            // anyone relying on that (this is what all four automatic
+            // fallback locations use, so this one change covers all of them).
+            var flatPath = Path.Combine(baseDirectory, fileName);
+            if (File.Exists(flatPath))
+                return logic.LoadLibrary(flatPath);
+
             var fullPath = Path.Combine(baseDirectory, Path.Combine(platformName, fileName));
             return File.Exists(fullPath) ? logic.LoadLibrary(fullPath) : IntPtr.Zero;
         }
