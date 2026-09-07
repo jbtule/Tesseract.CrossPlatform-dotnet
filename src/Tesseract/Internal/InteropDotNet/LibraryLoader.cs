@@ -42,6 +42,15 @@ namespace InteropDotNet
             if (libraryName != Tesseract.Interop.Constants.TesseractDllName && libraryName != Tesseract.Interop.Constants.LeptonicaDllName)
                 return IntPtr.Zero;
 
+            // Confirmed via a real spike (see tesseract-nuget-platforms' Blazor WASM backlog
+            // plan): the resolver *is* invoked under browser-wasm even for a statically-linked
+            // (NativeFileReference) native module -- there's no filesystem to probe there, and
+            // LoadLibrary's search order would otherwise throw. Returning IntPtr.Zero lets the
+            // runtime's own default resolution find the statically-linked symbols directly,
+            // which it does successfully once given the chance.
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Create("BROWSER")))
+                return IntPtr.Zero;
+
             return LoadLibrary(libraryName);
         }
 
