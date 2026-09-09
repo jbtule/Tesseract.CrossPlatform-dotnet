@@ -23,6 +23,12 @@ namespace Tesseract.Tests
         private static readonly ConfidenceTolerantTestDifferenceHandler ConfidenceTolerantHandler =
             new ConfidenceTolerantTestDifferenceHandler();
 
+        // CanPrintVariables' line order isn't part of the invariant being tested (see
+        // UnorderedLinesTestDifferenceHandler's own remarks) -- unlike ConfidenceTolerantHandler
+        // above, this isn't about tolerating drift in a value, just not caring about position.
+        private static readonly UnorderedLinesTestDifferenceHandler UnorderedLinesHandler =
+            new UnorderedLinesTestDifferenceHandler();
+
         [Test]
         public void CanGetVersion()
         {
@@ -554,7 +560,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
                 if (engine.TryGetBoolVariable(VariableName, out result)) {
                     Assert.That(result, Is.EqualTo(variableValue));
                 } else {
-                    Assert.Fail("Failed to retrieve value for '{0}'.", VariableName);
+                    Assert.Fail($"Failed to retrieve value for '{VariableName}'.");
                 }
             }
         }
@@ -593,7 +599,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
                 if (engine.TryGetDoubleVariable(variableName, out result)) {
                     Assert.That(result, Is.EqualTo(variableValue));
                 } else {
-                    Assert.Fail("Failed to retrieve value for '{0}'.", variableName);
+                    Assert.Fail($"Failed to retrieve value for '{variableName}'.");
                 }
             }
         }
@@ -612,7 +618,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
                 if (engine.TryGetIntVariable(variableName, out result)) {
                     Assert.That(result, Is.EqualTo(variableValue));
                 } else {
-                    Assert.Fail("Failed to retrieve value for '{0}'.", variableName);
+                    Assert.Fail($"Failed to retrieve value for '{variableName}'.");
                 }
             }
         }
@@ -631,7 +637,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
                 if (engine.TryGetStringVariable(variableName, out result)) {
                     Assert.That(result, Is.EqualTo(variableValue));
                 } else {
-                    Assert.Fail("Failed to retrieve value for '{0}'.", variableName);
+                    Assert.Fail($"Failed to retrieve value for '{variableName}'.");
                 }
             }
         }
@@ -659,8 +665,12 @@ TestUtils.NormaliseNewLine(@"</word></line>
                 var actualResultsFilename = TestResultRunFile(ResultFilename);
                 Assert.That(engine.TryPrintVariablesToFile(actualResultsFilename), Is.True);
 
-                // Load the expected results and verify that they match
-                CheckResult(ResultFilename);
+                // Load the expected results and verify that they match. Order-insensitive: see
+                // UnorderedLinesTestDifferenceHandler's own remarks -- this dump's line order
+                // depends on C++ static-initialization order across translation units, which
+                // isn't guaranteed across linkers/toolchains and isn't part of what this test
+                // actually verifies.
+                CheckResult(ResultFilename, UnorderedLinesHandler);
             }
         }
 

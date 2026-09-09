@@ -30,7 +30,7 @@ namespace Tesseract.Tests
                 var expectedResult = TestUtils.NormaliseNewLine(File.ReadAllText(expectedResultFilename));
                 if (expectedResult != actualResult)
                 {
-                    Assert.Fail("Expected results to be \"{0}\" but was \"{1}\".", expectedResultFilename, actualResultFilename);
+                    Assert.Fail($"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\".");
                 }
             }
             else
@@ -99,8 +99,7 @@ namespace Tesseract.Tests
             if (actualMasked != expectedMasked)
             {
                 Assert.Fail(
-                    "Expected results to be \"{0}\" but was \"{1}\" -- and not just by decimal-value drift (structure/text differs).",
-                    expectedResultFilename, actualResultFilename);
+                    $"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\" -- and not just by decimal-value drift (structure/text differs).");
             }
 
             var actualNumbers = DecimalNumberPattern.Matches(actualResult)
@@ -114,10 +113,58 @@ namespace Tesseract.Tests
                 if (delta > tolerance)
                 {
                     Assert.Fail(
-                        "Numeric value #{0} in \"{1}\" differs from \"{2}\" by {3:0.######} (tolerance {4}): expected {5} but was {6}.",
-                        i, actualResultFilename, expectedResultFilename, delta, tolerance, expectedNumbers[i], actualNumbers[i]);
+                        $"Numeric value #{i} in \"{actualResultFilename}\" differs from \"{expectedResultFilename}\" by {delta:0.######} (tolerance {tolerance}): expected {expectedNumbers[i]} but was {actualNumbers[i]}.");
                 }
             }
+        }
+    }
+
+    /// <summary>
+    /// Like <see cref="FailTestDifferenceHandler"/>, but lines are sorted before comparing --
+    /// for output whose line *order* isn't part of the invariant being tested, only which
+    /// lines are present and what they say.
+    ///
+    /// <remarks>
+    /// Exists specifically for CanPrintVariables (tesseract's full registered-parameter dump):
+    /// confirmed via a real diff against an actual (if unofficial, ad-hoc) alternate build --
+    /// of ~608 lines, ~580 were identical content in a different order, not different content.
+    /// Tesseract registers each parameter via a static initializer scattered across many
+    /// translation units; the C++ standard doesn't guarantee initialization order *across*
+    /// TUs, so a different linker/toolchain can legitimately produce a different final
+    /// registration order with zero behavioral difference. A byte-exact, order-sensitive
+    /// comparison would flag that reordering as a failure even though every parameter and
+    /// value is identical -- this expresses the actual invariant instead. A real content
+    /// change (a parameter's value changed, or a parameter is missing/added) still fails,
+    /// since sorting doesn't hide set differences, only positional ones.
+    /// </remarks>
+    /// </summary>
+    public class UnorderedLinesTestDifferenceHandler : ITestDifferenceHandler
+    {
+        public void Execute(string actualResultFilename, string expectedResultFilename)
+        {
+            if (!File.Exists(expectedResultFilename))
+            {
+                File.Copy(actualResultFilename, expectedResultFilename);
+                Console.WriteLine($"Expected result did not exist, the file \"{actualResultFilename}\" was used as a reference. Please check the file");
+                return;
+            }
+
+            var actualLines = SortedLines(actualResultFilename);
+            var expectedLines = SortedLines(expectedResultFilename);
+            if (!actualLines.SequenceEqual(expectedLines, StringComparer.Ordinal))
+            {
+                Assert.Fail(
+                    $"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\" -- and not just by line order (line content differs).");
+            }
+        }
+
+        private static List<string> SortedLines(string filename)
+        {
+            var text = TestUtils.NormaliseNewLine(File.ReadAllText(filename));
+            return text.Split('\n')
+                .Where(line => !string.IsNullOrEmpty(line))
+                .OrderBy(line => line, StringComparer.Ordinal)
+                .ToList();
         }
     }
 
@@ -146,7 +193,7 @@ namespace Tesseract.Tests
                     expectedResult = TestUtils.NormaliseNewLine(File.ReadAllText(expectedResultFilename));
                     if (expectedResult != actualResult)
                     {
-                        Assert.Fail("Expected results to be \"{0}\" but was \"{1}\".", expectedResultFilename, actualResultFilename);
+                        Assert.Fail($"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\".");
                     }
                 }
             }
