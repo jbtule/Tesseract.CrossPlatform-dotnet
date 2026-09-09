@@ -43,8 +43,7 @@ namespace Tesseract.Tests
 
         protected static string TestResultPath(string path)
         {
-            // Assumes test executable is running in .\bin\$config\$platform
-            var basePath = AbsolutePath("../../../../Tesseract.Tests/Results");
+            var basePath = Path.Combine(TestEnvironment.ProjectSourceRoot, "Results");
 
             return Path.GetFullPath(Path.Combine(basePath, path));
         }
