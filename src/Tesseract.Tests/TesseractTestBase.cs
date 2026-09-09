@@ -75,10 +75,22 @@ namespace Tesseract.Tests
 
         protected static void CheckResult(string resultFilename)
         {
+            CheckResult(resultFilename, testDifferenceHandler);
+        }
+
+        /// <summary>
+        /// Same as <see cref="CheckResult(string)"/>, but with an explicit
+        /// <see cref="ITestDifferenceHandler"/> override -- for the handful of golden
+        /// fixtures (confidence-score-bearing output) that need
+        /// <see cref="ConfidenceTolerantTestDifferenceHandler"/> instead of the default
+        /// exact-match <see cref="FailTestDifferenceHandler"/>.
+        /// </summary>
+        protected static void CheckResult(string resultFilename, ITestDifferenceHandler handler)
+        {
             var actualResultFilename = TestResultRunFile(resultFilename);
             var expectedResultFilename = TestResultPath(resultFilename);
 
-            testDifferenceHandler.Execute(actualResultFilename, expectedResultFilename);
+            handler.Execute(actualResultFilename, expectedResultFilename);
         }
 
         #endregion File Helpers

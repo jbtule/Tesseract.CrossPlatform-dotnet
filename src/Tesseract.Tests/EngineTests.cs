@@ -15,6 +15,14 @@ namespace Tesseract.Tests
     {
         private const string TestImagePath = "Ocr/phototest.tif";
 
+        // Confidence scores in these three outputs are known to drift by a fraction of a
+        // percentage point across CPU/toolchain (see ConfidenceTolerantTestDifferenceHandler's
+        // own remarks for the full story) -- recognized text and bounding boxes never differ,
+        // only these scores, so a tolerant comparison is the correct check here, not a
+        // byte-exact one.
+        private static readonly ConfidenceTolerantTestDifferenceHandler ConfidenceTolerantHandler =
+            new ConfidenceTolerantTestDifferenceHandler();
+
         [Test]
         public void CanGetVersion()
         {
@@ -265,7 +273,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
                 }
             }
 
-            CheckResult(ResultPath);
+            CheckResult(ResultPath, ConfidenceTolerantHandler);
         }
 
 #if NETFULL
@@ -346,7 +354,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
                 }
             }
 
-            CheckResult(resultFilename);
+            CheckResult(resultFilename, ConfidenceTolerantHandler);
         }
 
         [Test]
@@ -445,7 +453,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
                 }
             }
 
-            CheckResult(resultFilename);
+            CheckResult(resultFilename, ConfidenceTolerantHandler);
         }
 
         [Test]
