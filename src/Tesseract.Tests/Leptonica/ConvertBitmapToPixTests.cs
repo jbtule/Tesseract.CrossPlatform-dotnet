@@ -5,6 +5,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Runtime.Versioning;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -12,10 +13,18 @@ namespace Tesseract.Tests.Leptonica
 {
     // System.Drawing.Common (the Bitmap/PixelFormat/ImageFormat types this whole class
     // exercises) throws PlatformNotSupportedException on anything but Windows as of .NET 6+
-    // -- see https://aka.ms/systemdrawingnonwindows. [Platform("Win")] reports these as
-    // skipped (with that reason) on macOS/Linux rather than failed, which is the honest
-    // state: not broken, just not applicable there.
+    // -- see https://aka.ms/systemdrawingnonwindows.
+    //
+    // Two separate mechanisms, doing two separate jobs:
+    //  - [Platform("Win")] (NUnit) controls the *test runner*: it skips these tests (with
+    //    that reason) on macOS/Linux instead of letting them fail there.
+    //  - [SupportedOSPlatform("windows")] (System.Runtime.Versioning) controls the
+    //    *compiler's* platform-compatibility analyzer: without it, every Bitmap/PixelFormat
+    //    call site in this file gets flagged CA1416 on every build, on every platform, since
+    //    the analyzer has no idea this class only ever runs on Windows -- it doesn't know
+    //    what an NUnit attribute means. This tells it.
     [Platform("Win")]
+    [SupportedOSPlatform("windows")]
     public class ConvertBitmapToPixTests : TesseractTestBase
     {
         // Test for [Issue #166](https://github.com/charlesw/tesseract/issues/166)
