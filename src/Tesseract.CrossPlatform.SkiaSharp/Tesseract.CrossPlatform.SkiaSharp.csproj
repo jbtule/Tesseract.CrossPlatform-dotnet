@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    SkiaSharp-based equivalent of Tesseract.Drawing (System.Drawing.Common), scoped down to
+    just enough to cover the same gap image codecs leave under browser-wasm: converting
+    already-decoded pixels (SKBitmap, which SkiaSharp, unlike System.Drawing.Common, can
+    decode/encode on every RID this repo targets, wasm included via
+    SkiaSharp.NativeAssets.WebAssembly) to/from Pix, without this package or Tesseract.CrossPlatform
+    itself needing to link in an image codec. Desktop-only build for now (net8/9/10, no
+    browser-wasm RID wiring yet); see the WASM backlog plan's Phase 3 (Pix.FromRawPixelData)
+    for the eventual wasm-side story this sets up.
+  -->
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>Tesseract.CrossPlatform.SkiaSharp</PackageId>
+    <Authors>jay@tuley.name</Authors>
+    <Company />
+    <Product>Tesseract.CrossPlatform.SkiaSharp</Product>
+    <Description>SkiaSharp-based Pix/SKBitmap interop for Tesseract.CrossPlatform -- a cross-platform (and eventually wasm-capable) alternative to Tesseract.Drawing's System.Drawing.Common-based (Windows-only) converters.</Description>
+    <Copyright>Copyright 2019-2020 Charles Weld; 2026 Jay Tuley</Copyright>
+    <PackageProjectUrl>https://github.com/jbtule/tesseract-nuget-platforms</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jbtule/tesseract-nuget-platforms</RepositoryUrl>
+    <PackageTags>Tesseract Ocr SkiaSharp</PackageTags>
+    <Version>5.5.2.1</Version>
+    <AssemblyVersion>5.5.2.1</AssemblyVersion>
+    <NeutralLanguage></NeutralLanguage>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <RootNamespace>Tesseract</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SkiaSharp" Version="4.152.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tesseract\Tesseract.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Equivalent test coverage to Tesseract.Tests's ConvertBitmapToPixTests/ColorTests, but for
+    Tesseract.CrossPlatform.SkiaSharp instead of Tesseract.Drawing: a separate project (not
+    added into Tesseract.Tests itself) so SkiaSharp stays a dependency only of the tests that
+    actually exercise it. Runs on every desktop RID this repo targets (unlike
+    ConvertBitmapToPixTests, which is Windows-only because System.Drawing.Common is).
+  -->
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
+    <IsPackable>false</IsPackable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.0" />
+    <PackageReference Include="nunit" Version="3.13.3" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.3.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tesseract.CrossPlatform.SkiaSharp\Tesseract.CrossPlatform.SkiaSharp.csproj" />
+    <ProjectReference Include="..\Tesseract\Tesseract.csproj" />
+  </ItemGroup>
+
+  <!--
+    Just the two fixture files these tests actually need, pulled from Tesseract.Tests's own
+    Data/ instead of duplicating a second copy of the whole fixture set: one 32bpp RGB(A) PNG
+    and one 8bpp grayscale PNG, matching the two pixel layouts this package supports.
+  -->
+  <ItemGroup>
+    <None Include="..\Tesseract.Tests\Data\Binarization\neo-32bit.png" Link="Data\Binarization\neo-32bit.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Tesseract.Tests\Data\Binarization\neo-8bit-grayscale.png" Link="Data\Binarization\neo-8bit-grayscale.png" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
+  </ItemGroup>
+</Project>
