@@ -123,7 +123,7 @@ namespace Tesseract
 
                 _currentDocumentHandle = new EndDocumentOnDispose(this, children);
                 return _currentDocumentHandle;
-            } catch (Exception error) {
+            } catch (Exception) {
                 // Dispose of all previously created child document's iff an error occured to prevent a memory leak.
                 foreach (var child in children) {
                     try {
@@ -133,7 +133,7 @@ namespace Tesseract
                     }
                 }
 
-                throw error;
+                throw;
             }
         }
 

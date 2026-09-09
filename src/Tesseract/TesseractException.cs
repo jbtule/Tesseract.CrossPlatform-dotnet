@@ -1,6 +1,5 @@
 ﻿
 using System;
-using System.Runtime.Serialization;
 
 namespace Tesseract
 {
@@ -8,7 +7,7 @@ namespace Tesseract
 	/// Desctiption of TesseractException.
 	/// </summary>
 	[Serializable]
-	public class TesseractException : Exception, ISerializable
+	public class TesseractException : Exception
 	{
 		public TesseractException()
 		{
@@ -19,11 +18,6 @@ namespace Tesseract
 		}
 
 		public TesseractException(string message, Exception innerException) : base(message, innerException)
-		{
-		}
-
-		// This constructor is needed for serialization.
-		protected TesseractException(SerializationInfo info, StreamingContext context) : base(info, context)
 		{
 		}
 	}
