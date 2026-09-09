@@ -15,6 +15,7 @@ namespace Tesseract.Tests.Leptonica.PixTests
         const string ResultsDirectory = @"Results/ImageManipulation/";
 
         [Test]
+        [RequiresImageCodecs]
         public void DescewTest()
         {
             var sourcePixPath = TestFilePath(@"Scew/scewed-phototest.png");
@@ -32,6 +33,7 @@ namespace Tesseract.Tests.Leptonica.PixTests
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void OtsuBinarizationTest()
         {
             var sourcePixFilename = TestFilePath(@"Binarization/neo-8bit.png");
@@ -47,6 +49,7 @@ namespace Tesseract.Tests.Leptonica.PixTests
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void SauvolaBinarizationTest()
         {
             string sourcePixFilename = TestFilePath(@"Binarization/neo-8bit-grayscale.png");
@@ -65,6 +68,7 @@ namespace Tesseract.Tests.Leptonica.PixTests
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void SauvolaTiledBinarizationTest()
         {
             string sourcePixFilename = TestFilePath(@"Binarization/neo-8bit-grayscale.png");
@@ -118,6 +122,7 @@ namespace Tesseract.Tests.Leptonica.PixTests
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void RemoveLinesTest()
         {
             var sourcePixFilename = TestFilePath(@"processing/table.png");
@@ -145,6 +150,7 @@ namespace Tesseract.Tests.Leptonica.PixTests
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void DespeckleTest()
         {
             var sourcePixFilename = TestFilePath(@"processing/w91frag.jpg");

@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 namespace Tesseract.Tests.ResultIteratorTests
 {
     [TestFixture]
+    [RequiresImageCodecs] // SetUp loads Ocr/Fonts.tif
     public class FontAttributesTests : TesseractTestBase
     {
         private TesseractEngine Engine { get; set; }

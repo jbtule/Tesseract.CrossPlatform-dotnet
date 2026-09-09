@@ -20,6 +20,7 @@ namespace Tesseract.Tests.Leptonica.PixTests
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanAddPixToPixArray()
         {
             var sourcePixPath = TestFilePath(@"Ocr/phototest.tif");
@@ -38,6 +39,7 @@ namespace Tesseract.Tests.Leptonica.PixTests
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanRemovePixFromArray()
         {
             var sourcePixPath = TestFilePath(@"Ocr/phototest.tif");
@@ -54,6 +56,7 @@ namespace Tesseract.Tests.Leptonica.PixTests
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanClearPixArray()
         {
             var sourcePixPath = TestFilePath(@"Ocr/phototest.tif");

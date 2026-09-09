@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 namespace Tesseract.Tests.ResultIteratorTests
 {
     [TestFixture]
+    [RequiresImageCodecs] // SetUp loads Ocr/blank.tif
     public class OfAnEmptyPixTests : TesseractTestBase
     {
         private TesseractEngine Engine { get; set; }

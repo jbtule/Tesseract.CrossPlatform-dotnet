@@ -122,24 +122,46 @@ namespace Tesseract.Tests
     /// <summary>
     /// Like <see cref="FailTestDifferenceHandler"/>, but lines are sorted before comparing --
     /// for output whose line *order* isn't part of the invariant being tested, only which
-    /// lines are present and what they say.
+    /// lines are present and what they say. Optionally, specific named lines (identified by
+    /// their tab-separated first field, i.e. tesseract's variable name for CanPrintVariables)
+    /// can be excluded from the comparison entirely on both sides -- for a *named, understood*
+    /// set of differences, not a blanket tolerance.
     ///
     /// <remarks>
-    /// Exists specifically for CanPrintVariables (tesseract's full registered-parameter dump):
-    /// confirmed via a real diff against an actual (if unofficial, ad-hoc) alternate build --
-    /// of ~608 lines, ~580 were identical content in a different order, not different content.
-    /// Tesseract registers each parameter via a static initializer scattered across many
-    /// translation units; the C++ standard doesn't guarantee initialization order *across*
-    /// TUs, so a different linker/toolchain can legitimately produce a different final
-    /// registration order with zero behavioral difference. A byte-exact, order-sensitive
-    /// comparison would flag that reordering as a failure even though every parameter and
-    /// value is identical -- this expresses the actual invariant instead. A real content
-    /// change (a parameter's value changed, or a parameter is missing/added) still fails,
-    /// since sorting doesn't hide set differences, only positional ones.
+    /// Exists specifically for CanPrintVariables (tesseract's full registered-parameter dump).
+    ///
+    /// The ordering behavior: confirmed via a real diff against an actual (if unofficial,
+    /// ad-hoc) alternate build -- of ~608 lines, ~580 were identical content in a different
+    /// order, not different content. Tesseract registers each parameter via a static
+    /// initializer scattered across many translation units; the C++ standard doesn't
+    /// guarantee initialization order *across* TUs, so a different linker/toolchain can
+    /// legitimately produce a different final registration order with zero behavioral
+    /// difference.
+    ///
+    /// The named-exclusion behavior: exists for comparing a build with deliberately different
+    /// compiled-in features (e.g. the browser-wasm native build, which builds with
+    /// -DDISABLE_CURL=ON and -DGRAPHICS_DISABLED=ON, per the WASM backlog plan's codec-drop
+    /// decision) against the desktop golden file. Tesseract only registers a parameter if the
+    /// translation unit that declares it got compiled in at all, so an intentionally
+    /// feature-reduced build is *missing* those parameters entirely, not just differently
+    /// valued. Deliberately a named allow-list, not a blanket "tolerate any set difference":
+    /// a real regression (a parameter that should exist silently disappearing, or a shared
+    /// parameter's value changing) still fails, because only the specific, already-diagnosed,
+    /// documented names below are excluded -- anything else missing or changed is a real,
+    /// material difference and is reported as such.
     /// </remarks>
     /// </summary>
     public class UnorderedLinesTestDifferenceHandler : ITestDifferenceHandler
     {
+        private readonly HashSet<string> ignorableVariableNames;
+
+        public UnorderedLinesTestDifferenceHandler(IEnumerable<string> ignorableVariableNames = null)
+        {
+            this.ignorableVariableNames = ignorableVariableNames != null
+                ? new HashSet<string>(ignorableVariableNames, StringComparer.Ordinal)
+                : new HashSet<string>(StringComparer.Ordinal);
+        }
+
         public void Execute(string actualResultFilename, string expectedResultFilename)
         {
             if (!File.Exists(expectedResultFilename))
@@ -154,17 +176,24 @@ namespace Tesseract.Tests
             if (!actualLines.SequenceEqual(expectedLines, StringComparer.Ordinal))
             {
                 Assert.Fail(
-                    $"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\" -- and not just by line order (line content differs).");
+                    $"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\" -- and not just by line order or a known/named difference (a material difference remains).");
             }
         }
 
-        private static List<string> SortedLines(string filename)
+        private List<string> SortedLines(string filename)
         {
             var text = TestUtils.NormaliseNewLine(File.ReadAllText(filename));
             return text.Split('\n')
                 .Where(line => !string.IsNullOrEmpty(line))
+                .Where(line => !ignorableVariableNames.Contains(VariableName(line)))
                 .OrderBy(line => line, StringComparer.Ordinal)
                 .ToList();
+        }
+
+        private static string VariableName(string line)
+        {
+            var tabIndex = line.IndexOf('\t');
+            return tabIndex >= 0 ? line.Substring(0, tabIndex) : line;
         }
     }
 

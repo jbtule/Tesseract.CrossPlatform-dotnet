@@ -5,6 +5,7 @@ using System.IO;
 namespace Tesseract.Tests
 {
     [TestFixture]
+    [RequiresImageCodecs] // every test here loads a real image file
     public class AnalyseResultTests : TesseractTestBase
     {
         private string ResultsDirectory

@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 namespace Tesseract.Tests
 {
     [TestFixture]
+    [RequiresImageCodecs] // every test here processes a real image file
     public class ResultRendererTests : TesseractTestBase
     {
         #region Test setup and teardown

@@ -23,11 +23,41 @@ namespace Tesseract.Tests
         private static readonly ConfidenceTolerantTestDifferenceHandler ConfidenceTolerantHandler =
             new ConfidenceTolerantTestDifferenceHandler();
 
+        // Named parameters known to be gated by the browser-wasm native build's
+        // -DDISABLE_CURL/-DGRAPHICS_DISABLED CMake flags (confirmed via a real diff against
+        // that build's actual output, not guessed) -- declared before UnorderedLinesHandler
+        // below since it's referenced in that field's own initializer, and static field
+        // initializers run in textual declaration order.
+        private static readonly string[] WasmCodecAndGraphicsGatedVariableNames =
+        {
+            // -DDISABLE_CURL=ON
+            "curl_timeout", "curl_cookiefile",
+            // -DGRAPHICS_DISABLED=ON (ScrollView-based debug visualization)
+            "editor_image_xpos", "editor_image_ypos", "editor_image_menuheight",
+            "editor_image_word_bb_color", "editor_image_blob_bb_color", "editor_image_win_name",
+            "editor_word_xpos", "editor_word_ypos", "editor_word_height", "editor_word_width",
+            "editor_word_name",
+            "textord_show_fixed_cuts", "textord_show_tables", "textord_tabfind_show_blocks",
+            "textord_tabfind_show_columns", "textord_tabfind_show_initial_partitions",
+            "textord_tabfind_show_partitions", "textord_tabfind_show_reject_blobs",
+            "textord_tabfind_show_strokewidths", "textord_tablefind_show_mark",
+            "textord_tablefind_show_stats",
+            "wordrec_blob_pause", "wordrec_display_all_blobs",
+        };
+
         // CanPrintVariables' line order isn't part of the invariant being tested (see
         // UnorderedLinesTestDifferenceHandler's own remarks) -- unlike ConfidenceTolerantHandler
         // above, this isn't about tolerating drift in a value, just not caring about position.
+        //
+        // Under browser-wasm specifically, also exclude the named parameters above -- everywhere
+        // else (the 5 real, pinned desktop platforms) stays a strict set comparison, so a
+        // genuine regression on those platforms still fails loudly; only wasm, which is known
+        // to compile out real functionality on purpose, gets the relaxed comparison, and only
+        // for these specific, already-diagnosed names.
         private static readonly UnorderedLinesTestDifferenceHandler UnorderedLinesHandler =
-            new UnorderedLinesTestDifferenceHandler();
+            OperatingSystem.IsBrowser()
+                ? new UnorderedLinesTestDifferenceHandler(WasmCodecAndGraphicsGatedVariableNames)
+                : new UnorderedLinesTestDifferenceHandler();
 
         [Test]
         public void CanGetVersion()
@@ -39,6 +69,7 @@ namespace Tesseract.Tests
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanParseMultipageTif()
         {
             using (var engine = CreateEngine()) {
@@ -58,6 +89,7 @@ namespace Tesseract.Tests
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanParseMultipageTifOneByOne()
         {
             using (var engine = CreateEngine())
@@ -87,6 +119,7 @@ namespace Tesseract.Tests
         [TestCase(PageSegMode.SingleWord, "This")]
         [TestCase(PageSegMode.SingleChar, "T")]
         [TestCase(PageSegMode.SingleBlockVertText, "A line of text", Ignore = "#490")]
+        [RequiresImageCodecs]
         public void CanParseText_UsingMode(PageSegMode mode, String expectedText)
         {
 
@@ -104,6 +137,7 @@ namespace Tesseract.Tests
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanParseText()
         {
             using (var engine = CreateEngine()) {
@@ -203,6 +237,7 @@ namespace Tesseract.Tests
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanGetSegmentedRegions()
         {
             int expectedCount = 8; // number of text lines in test image
@@ -227,6 +262,7 @@ namespace Tesseract.Tests
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanProcessEmptyPxUsingResultIterator()
         {
             string actualResult;
@@ -246,6 +282,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanProcessMultiplePixs()
         {
             using (var engine = CreateEngine()) {
@@ -265,6 +302,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanProcessPixUsingResultIterator()
         {
             const string ResultPath = @"EngineTests/CanProcessPixUsingResultIterator.txt";
@@ -306,6 +344,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
 #endif
 
         [Test]
+        [RequiresImageCodecs]
         public void CanGenerateHOCROutput(
             [Values(true, false)] Boolean useXHtml)
         {
@@ -324,6 +363,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanGenerateAltoOutput()
         {
             var resultFilename = String.Format("EngineTests/CanGenerateAltoOutput.txt");
@@ -344,6 +384,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanGenerateTsvOutput()
         {
             var resultFilename = String.Format("EngineTests/CanGenerateTsvOutput.txt");
@@ -364,6 +405,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanGenerateBoxOutput()
         {
             var resultFilename = String.Format("EngineTests/CanGenerateBoxOutput.txt");
@@ -383,6 +425,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanGenerateLSTMBoxOutput()
         {
             var resultFilename = String.Format("EngineTests/CanGenerateLSTMBoxOutput.txt");
@@ -403,6 +446,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanGenerateWordStrBoxOutput()
         {
             var resultFilename = "EngineTests/CanGenerateWordStrBoxOutput.txt";
@@ -423,6 +467,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanGenerateUNLVOutput()
         {
             var resultFilename = "EngineTests/CanGenerateUNLVOutput.txt";
@@ -443,6 +488,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void CanProcessPixUsingResultIteratorAndChoiceIterator()
         {
             const string resultFilename = @"EngineTests/CanProcessPixUsingResultIteratorAndChoiceIterator.txt";
@@ -463,6 +509,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
         }
 
         [Test]
+        [RequiresImageCodecs]
         public void Initialise_CanLoadConfigFile()
         {
             using (var engine = new TesseractEngine(DataPath, "eng", EngineMode.Default, "bazzar")) {
@@ -569,6 +616,7 @@ TestUtils.NormaliseNewLine(@"</word></line>
         /// As per Bug #52 setting 'classify_bln_numeric_mode' variable to '1' causes the engine to fail on processing.
         /// </summary>
         [Test]
+        [RequiresImageCodecs]
         public void CanSetClassifyBlnNumericModeVariable()
         {
             using (var engine = CreateEngine()) {
