@@ -513,11 +513,22 @@ TestUtils.NormaliseNewLine(@"</word></line>
 
         private static IEnumerable<string> DataPaths()
         {
-            return new string[] {
+            // Exercises a few different spellings of the same directory the engine should
+            // accept equally. The backslash spelling used to be a literal @".\tessdata\" --
+            // a real, distinct path separator on Windows, but just two backslash characters
+            // in the filename on macOS/Linux (Path.Combine doesn't treat '\' as a separator
+            // there), so it silently pointed at a directory that could never exist off
+            // Windows. '\\' is only a meaningful alternate spelling on Windows in the first
+            // place, so only add that case there -- rather than reconstruct it from
+            // Path.DirectorySeparatorChar, which would just make it a no-op duplicate of the
+            // forward-slash case everywhere else.
+            var paths = new List<string> {
                 AbsolutePath(@"./tessdata"),
                 AbsolutePath(@"./tessdata/"),
-                AbsolutePath(@".\tessdata\")
             };
+            if (Path.DirectorySeparatorChar == '\\')
+                paths.Add(AbsolutePath(@".\tessdata\"));
+            return paths;
         }
         
         #region Variable set\get

@@ -10,6 +10,12 @@ using System.Threading.Tasks;
 
 namespace Tesseract.Tests.Leptonica
 {
+    // System.Drawing.Common (the Bitmap/PixelFormat/ImageFormat types this whole class
+    // exercises) throws PlatformNotSupportedException on anything but Windows as of .NET 6+
+    // -- see https://aka.ms/systemdrawingnonwindows. [Platform("Win")] reports these as
+    // skipped (with that reason) on macOS/Linux rather than failed, which is the honest
+    // state: not broken, just not applicable there.
+    [Platform("Win")]
     public class ConvertBitmapToPixTests : TesseractTestBase
     {
         // Test for [Issue #166](https://github.com/charlesw/tesseract/issues/166)
