@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using Tesseract.Interop;
 
 namespace Tesseract
 {
@@ -14,11 +15,11 @@ namespace Tesseract
     /// </remarks>
     public sealed class PixColormap : IDisposable
     {
-        private HandleRef handle;
+        private NativeHandle handle;
 
         internal PixColormap(IntPtr handle)
         {
-        	this.handle = new HandleRef(this, handle);
+        	this.handle = new NativeHandle(handle);
         }
 
         public static PixColormap Create(int depth)
@@ -62,7 +63,7 @@ namespace Tesseract
             return new PixColormap(handle);
         }
 
-        internal HandleRef Handle
+        internal NativeHandle Handle
         {
             get { return handle; }
         }
@@ -151,7 +152,7 @@ namespace Tesseract
         {
         	IntPtr tmpHandle = Handle.Handle;
             Interop.LeptonicaApi.pixcmapDestroy(ref tmpHandle);
-            this.handle = new HandleRef(this, IntPtr.Zero);
+            this.handle = new NativeHandle(IntPtr.Zero);
         }
     }
 }

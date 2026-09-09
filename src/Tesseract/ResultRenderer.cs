@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Tesseract.Internal;
+using Tesseract.Interop;
 
 namespace Tesseract
 {
@@ -220,12 +221,12 @@ namespace Tesseract
             }
         }
 
-        private HandleRef _handle;
+        private NativeHandle _handle;
         private IDisposable _currentDocumentHandle;
 
         protected ResultRenderer()
         {
-            _handle = new HandleRef(this, IntPtr.Zero);
+            _handle = new NativeHandle(IntPtr.Zero);
         }
 
         /// <summary>
@@ -237,7 +238,7 @@ namespace Tesseract
             Guard.Require("handle", handle != IntPtr.Zero, "handle must be initialised.");
             Guard.Verify(_handle.Handle == IntPtr.Zero, "Rensult renderer has already been initialised.");
 
-            _handle = new HandleRef(this, handle);
+            _handle = new NativeHandle(handle);
         }
 
         /// <summary>
@@ -282,7 +283,7 @@ namespace Tesseract
             return _currentDocumentHandle;
         }
 
-        protected HandleRef Handle
+        protected NativeHandle Handle
         {
             get { return _handle; }
         }
@@ -316,7 +317,7 @@ namespace Tesseract
                 if (_handle.Handle != IntPtr.Zero)
                 {
                     Interop.TessApi.DeleteResultRenderer(_handle);
-                    _handle = new HandleRef(this, IntPtr.Zero);
+                    _handle = new NativeHandle(IntPtr.Zero);
                 }
             }
         }

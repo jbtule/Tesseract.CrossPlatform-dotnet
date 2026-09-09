@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
+using Tesseract.Interop;
 
 namespace Tesseract
 {
@@ -15,12 +16,12 @@ namespace Tesseract
     public class PageIterator : DisposableBase
     {
         protected readonly Page page;
-        protected readonly HandleRef handle;
+        protected readonly NativeHandle handle;
 
         internal PageIterator(Page page, IntPtr handle)
         {
             this.page = page;
-        	this.handle = new HandleRef(this, handle);
+        	this.handle = new NativeHandle(handle);
         }
 
         /// <summary>

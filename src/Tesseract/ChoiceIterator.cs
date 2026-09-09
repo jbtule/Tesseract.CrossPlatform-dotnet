@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using Tesseract.Interop;
 
 namespace Tesseract
 {
@@ -8,11 +9,11 @@ namespace Tesseract
     /// </summary>
     public sealed class ChoiceIterator : DisposableBase
     {
-        private readonly HandleRef _handleRef;
-        
+        private readonly NativeHandle _handleRef;
+
         internal ChoiceIterator(IntPtr handle)
         {
-            this._handleRef = new HandleRef(this, handle);
+            this._handleRef = new NativeHandle(handle);
         }
 
         /// <summary>

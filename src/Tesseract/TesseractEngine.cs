@@ -16,7 +16,7 @@ namespace Tesseract
     {
         private static readonly TraceSource trace = new TraceSource("Tesseract");
 
-        private HandleRef handle;
+        private NativeHandle handle;
 
         private int processCount = 0;
 
@@ -178,7 +178,7 @@ namespace Tesseract
             Guard.RequireNotNullOrEmpty("language", language);
 
             DefaultPageSegMode = PageSegMode.Auto;
-            handle = new HandleRef(this, Interop.TessApi.BaseApiCreate());
+            handle = new NativeHandle(Interop.TessApi.BaseApiCreate());
 
             Initialise(datapath, language, engineMode, configFiles, initialOptions, setOnlyNonDebugVariables);
         }
@@ -193,7 +193,7 @@ namespace Tesseract
             }
         }
 
-        internal HandleRef Handle
+        internal NativeHandle Handle
         {
             get { return handle; }
         }
@@ -274,10 +274,16 @@ namespace Tesseract
         
         protected override void Dispose(bool disposing)
         {
-            if (handle.Handle != IntPtr.Zero)
+            // handle can be null here: unlike the HandleRef struct it replaces,
+            // NativeHandle is a reference type, and an object is registered for
+            // finalization at allocation time -- before its constructor body runs.
+            // If the constructor throws before (or without) assigning handle (e.g.
+            // Guard.RequireNotNullOrEmpty failing, or Initialise failing), the
+            // finalizer still runs against a partially-constructed instance.
+            if (handle != null && handle.Handle != IntPtr.Zero)
             {
                 Interop.TessApi.BaseApiDelete(handle);
-                handle = new HandleRef(this, IntPtr.Zero);
+                handle = new NativeHandle(IntPtr.Zero);
             }
         }
 
@@ -314,7 +320,7 @@ namespace Tesseract
             if (Interop.TessApi.BaseApiInit(handle, datapath, language, (int)engineMode, configFiles ?? new List<string>(), initialValues ?? new Dictionary<string, object>(), setOnlyNonDebugVariables) != 0)
             {
                 // Special case logic to handle cleaning up as init has already released the handle if it fails.
-                handle = new HandleRef(this, IntPtr.Zero);
+                handle = new NativeHandle(IntPtr.Zero);
                 GC.SuppressFinalize(this);
 
                 throw new TesseractException(ErrorMessage.Format(1, "Failed to initialise tesseract engine."));

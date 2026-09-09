@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Tesseract.Internal;
+using Tesseract.Interop;
 
 namespace Tesseract
 {
@@ -167,7 +168,7 @@ namespace Tesseract
 		/// <summary>
 		/// Gets the handle to the underlying PixA structure.
 		/// </summary>
-		private HandleRef _handle;
+		private NativeHandle _handle;
 		private int _count;
 		private int version;
 		
@@ -177,7 +178,7 @@ namespace Tesseract
 		
 		private PixArray(IntPtr handle)
 		{
-			_handle = new HandleRef(this, handle);
+			_handle = new NativeHandle(handle);
 			version = 1;
 			
 			// These will need to be updated whenever the PixA structure changes (i.e. a Pix is added or removed) though at the moment that isn't a problem.
@@ -305,7 +306,7 @@ namespace Tesseract
 		{
 			IntPtr handle = _handle.Handle;
 			Interop.LeptonicaApi.pixaDestroy(ref handle);
-			_handle = new HandleRef(this, handle);
+			_handle = new NativeHandle(handle);
 		}
 		
 		#endregion

@@ -228,18 +228,18 @@ namespace Tesseract
         public List<Rectangle> GetSegmentedRegions(PageIteratorLevel pageIteratorLevel)
         {
             var boxArray = Interop.TessApi.BaseAPIGetComponentImages(Engine.Handle, pageIteratorLevel, Interop.Constants.TRUE, IntPtr.Zero, IntPtr.Zero);
-            int boxCount = Interop.LeptonicaApi.boxaGetCount(new HandleRef(this, boxArray));
+            int boxCount = Interop.LeptonicaApi.boxaGetCount(new NativeHandle(boxArray));
 
             List<Rectangle> boxList = new List<Rectangle>();
 
             for (int i = 0; i < boxCount; i++) {
-                var box = Interop.LeptonicaApi.boxaGetBox(new HandleRef(this, boxArray), i, PixArrayAccessType.Clone);
+                var box = Interop.LeptonicaApi.boxaGetBox(new NativeHandle(boxArray), i, PixArrayAccessType.Clone);
                 if (box == IntPtr.Zero) {
                     continue;
                 }
 
                 int px, py, pw, ph;
-                Interop.LeptonicaApi.boxGetGeometry(new HandleRef(this, box), out px, out py, out pw, out ph);
+                Interop.LeptonicaApi.boxGetGeometry(new NativeHandle(box), out px, out py, out pw, out ph);
                 boxList.Add(new Rectangle(px, py, pw, ph));
                 Interop.LeptonicaApi.boxDestroy(ref box);
             }
@@ -344,7 +344,7 @@ namespace Tesseract
         {
             Guard.Verify(PageSegmentMode != PageSegMode.OsdOnly, "Cannot OCR image when using OSD only page segmentation, please use DetectBestOrientation instead.");
             if (!runRecognitionPhase) {
-                if (Interop.TessApi.BaseApiRecognize(Engine.Handle, new HandleRef(this, IntPtr.Zero)) != 0) {
+                if (Interop.TessApi.BaseApiRecognize(Engine.Handle, new NativeHandle(IntPtr.Zero)) != 0) {
                     throw new InvalidOperationException("Recognition of image failed.");
                 }
 
