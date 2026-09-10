@@ -16,6 +16,16 @@
   <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!--
+      This project starts warning-clean (confirmed via a real build, not
+      assumed), unlike vendor/tesseract's own inherited Tesseract.csproj,
+      which carries hundreds of pre-existing CS1591/etc. warnings not worth
+      bulk-fixing just for this. TreatWarningsAsErrors only governs this
+      project's own compilation, not Tesseract.csproj's (a referenced
+      project's warnings are constrained by its own settings), so this is
+      safe to turn on here without touching that debt.
+    -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>Tesseract.CrossPlatform.SkiaSharp</PackageId>
     <Authors>jay@tuley.name</Authors>

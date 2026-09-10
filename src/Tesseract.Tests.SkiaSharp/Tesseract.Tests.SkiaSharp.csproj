@@ -10,6 +10,10 @@
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Starts warning-clean (confirmed via a real build): see
+         Tesseract.CrossPlatform.SkiaSharp.csproj's own comment for why this
+         is safe alongside vendor/tesseract's own warning-heavy Tesseract.csproj. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
