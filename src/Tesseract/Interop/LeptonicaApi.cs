@@ -9,10 +9,31 @@ namespace Tesseract.Interop
 {
     internal unsafe static partial class LeptonicaApi
     {
+        // Leptonica's own diagnostic messages (fprintf(stderr, "Error in ...")/
+        // "Warning in ..."), e.g. from the font-loading path a fresh
+        // TesseractEngine touches during init: harmless everywhere else, but
+        // under browser-wasm any stderr write at all -- not just an actual
+        // fatal error -- unconditionally triggers Blazor's own
+        // #blazor-error-ui "An unhandled error has occurred" banner (confirmed
+        // directly in a real build's shipped blazor.webassembly.js: its err:
+        // module callback does `console.error(e), yt()` with no severity
+        // gating at all). L_SEVERITY_NONE = 6, from leptonica's own
+        // environ.h -- suppresses every leptonica message regardless of
+        // severity. Desktop RIDs are unaffected: this only runs under wasm.
+        private const int L_SEVERITY_NONE = 6;
+
         static LeptonicaApi()
         {
             NativeLibraryResolver.Initialize();
+            if (System.OperatingSystem.IsBrowser())
+            {
+                setMsgSeverity(L_SEVERITY_NONE);
+            }
         }
+
+        [LibraryImport(Constants.LeptonicaDllName, EntryPoint = "setMsgSeverity")]
+        [UnmanagedCallConv(CallConvs = new[] { typeof(CallConvCdecl) })]
+        private static partial int setMsgSeverity(int newSeverity);
 
         #region PixA
 

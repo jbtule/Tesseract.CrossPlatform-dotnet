@@ -319,6 +319,32 @@ namespace Tesseract
                 }
             }
 
+            // Tesseract's own tprintf() (distinct from -- and not reached by --
+            // LeptonicaApi's setMsgSeverity(L_SEVERITY_NONE) call: two
+            // completely separate logging mechanisms) writes to stderr by
+            // default, e.g. a routine "Estimating resolution as N" whenever a
+            // Pix's resolution wasn't set, which real OCR calls hit often.
+            // Same browser-wasm/Blazor concern as LeptonicaApi's own comment:
+            // any stderr write there triggers Blazor's global error banner
+            // regardless of severity. tprintf's own debug_file config
+            // variable (tesseract/ccutil/tprintf.cpp) redirects it away from
+            // stderr; it's passed here as an ordinary init variable rather
+            // than a later SetVariable call so it's in effect from this
+            // engine's very first Init4 call, before anything can tprintf.
+            // Only set if the caller didn't already choose their own
+            // debug_file (respects an explicit choice); "/dev/null" is a
+            // standard-issue Emscripten virtual device, always present and
+            // writable in the wasm runtime's default filesystem setup. Copies
+            // into a new dictionary rather than mutating the caller's own
+            // instance in place -- initialValues is caller-supplied and may
+            // be reused elsewhere.
+            if (OperatingSystem.IsBrowser() && (initialValues == null || !initialValues.ContainsKey("debug_file")))
+            {
+                var merged = initialValues != null ? new Dictionary<string, object>(initialValues) : new Dictionary<string, object>();
+                merged["debug_file"] = "/dev/null";
+                initialValues = merged;
+            }
+
             if (Interop.TessApi.BaseApiInit(handle, datapath, language, (int)engineMode, configFiles ?? new List<string>(), initialValues ?? new Dictionary<string, object>(), setOnlyNonDebugVariables) != 0)
             {
                 // Special case logic to handle cleaning up as init has already released the handle if it fails.
