@@ -36,8 +36,8 @@
       pipeline) passes -p:Version=$PACKAGE_VERSION explicitly and overrides it. Keep
       this in sync by hand when versions.env's PACKAGE_VERSION changes.
     -->
-    <Version>5.5.2.2</Version>
-    <AssemblyVersion>5.5.2.2</AssemblyVersion>
+    <Version>5.5.2.200</Version>
+    <AssemblyVersion>5.5.2.200</AssemblyVersion>
     <NeutralLanguage></NeutralLanguage>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RootNamespace>Tesseract</RootNamespace>
