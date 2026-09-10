@@ -8,9 +8,15 @@ namespace Tesseract.Tests.SkiaSharp
     [TestFixture]
     public class ConvertSkiaBitmapToPixTests
     {
+        // TestContext.CurrentContext.WorkDirectory, not AppContext.BaseDirectory -- matches
+        // Tesseract.Tests's own TesseractTestBase.AbsolutePath convention, and matters beyond
+        // consistency: this file is also compiled directly into the wasm test runner (see the
+        // WASM backlog plan), where the working directory is deliberately set to a staged
+        // fixture root before tests run and AppContext.BaseDirectory would resolve somewhere
+        // else entirely.
         private static string TestFilePath(string path)
         {
-            return Path.Combine(AppContext.BaseDirectory, "Data", path);
+            return Path.Combine(NUnit.Framework.TestContext.CurrentContext.WorkDirectory, "Data", path);
         }
 
         [Test]
@@ -46,8 +52,15 @@ namespace Tesseract.Tests.SkiaSharp
         [TestCase(false)]
         public void Convert_PixToSkiaBitmap_32bpp(bool includeAlpha)
         {
+            // Source Pix built via SkiaBitmapToPixConverter (SKBitmap.Decode), not
+            // Pix.LoadFromFile -- deliberately avoids Leptonica's own PNG codec so this test
+            // exercises only the two converters under test and runs identically under
+            // browser-wasm, where Leptonica has none (see the codec-drop decision in the WASM
+            // backlog plan).
             var sourceFile = TestFilePath("Binarization/neo-32bit.png");
-            using (var source = Pix.LoadFromFile(sourceFile)) {
+            var toPix = new SkiaBitmapToPixConverter();
+            using (var decoded = SKBitmap.Decode(sourceFile))
+            using (var source = toPix.Convert(decoded)) {
                 var converter = new PixToSkiaBitmapConverter();
                 using (var dest = converter.Convert(source, includeAlpha)) {
                     Assert.That(dest.ColorType, Is.EqualTo(SKColorType.Rgba8888));
@@ -59,12 +72,11 @@ namespace Tesseract.Tests.SkiaSharp
         [Test]
         public void Convert_PixToSkiaBitmap_Gray8()
         {
-            // Despite the filename, this fixture loads as 32bpp RGB (same as
-            // ImageManipulationTests' SauvolaBinarizationTest/OtsuBinarizationTest use it) --
-            // ConvertRGBToGray is the actual, existing route to a real depth-8 Pix.
             var sourceFile = TestFilePath("Binarization/neo-8bit-grayscale.png");
-            using (var loaded = Pix.LoadFromFile(sourceFile))
-            using (var source = loaded.ConvertRGBToGray(1, 1, 1)) {
+            var toPix = new SkiaBitmapToPixConverter();
+            using (var decoded = SKBitmap.Decode(sourceFile))
+            using (var gray = decoded.Copy(SKColorType.Gray8))
+            using (var source = toPix.Convert(gray)) {
                 Assert.That(source.Depth, Is.EqualTo(8));
                 Assert.That(source.Colormap, Is.Null);
                 var converter = new PixToSkiaBitmapConverter();
@@ -89,10 +101,15 @@ namespace Tesseract.Tests.SkiaSharp
                 for (int x = 0; x < width; x += width) {
                     PixColor sourcePixel = bmp.GetPixel(x, y).ToPixColor();
                     PixColor destPixel = GetPixel(pix, x, y);
+                    // Plain interpolated-string message, no params object[] args: NUnit 4.x
+                    // (used by the wasm test runner this file also compiles into, see the
+                    // WASM backlog plan) dropped the message-format-args Assert.That overloads
+                    // that NUnit 3.x (used by desktop's Tesseract.Tests.SkiaSharp.csproj) still
+                    // has -- this form compiles against both.
                     if (checkAlpha) {
-                        Assert.That(destPixel, Is.EqualTo(sourcePixel), "Expected pixel at <{0},{1}> to be same in both source and dest.", x, y);
+                        Assert.That(destPixel, Is.EqualTo(sourcePixel), $"Expected pixel at <{x},{y}> to be same in both source and dest.");
                     } else {
-                        Assert.That(destPixel, Is.EqualTo(sourcePixel).Using<PixColor>((c1, c2) => (c1.Red == c2.Red && c1.Blue == c2.Blue && c1.Green == c2.Green) ? 0 : 1), "Expected pixel at <{0},{1}> to be same in both source and dest.", x, y);
+                        Assert.That(destPixel, Is.EqualTo(sourcePixel).Using<PixColor>((c1, c2) => (c1.Red == c2.Red && c1.Blue == c2.Blue && c1.Green == c2.Green) ? 0 : 1), $"Expected pixel at <{x},{y}> to be same in both source and dest.");
                     }
                 }
             }
