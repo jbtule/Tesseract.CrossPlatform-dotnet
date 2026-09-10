@@ -2,21 +2,49 @@
   <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
   </PropertyGroup>
+  <!--
+    Real script/workflow builds always pass -p:GeneratePackageOnBuild=false
+    -p:AssemblyName=Tesseract.CrossPlatform (confirmed via a real grep across
+    every call site, not assumed), then pack the resulting DLL under a
+    separate, hand-written nuspec (nuget/wrapper/Tesseract.CrossPlatform.nuspec,
+    see that project's own comment for why: this project's default pack
+    bundles charlesw's stale Windows-only x64/x86 binaries, which this
+    repo's own cross-platform native packages supersede and which were
+    removed from this fork outright). Even so, this project's own
+    GeneratePackageOnBuild/PackageId still needed real fixing, not just
+    "nothing calls it that way": a bare `dotnet build`/`dotnet pack` of
+    this project (no override: exactly what a new contributor unaware of
+    the convention, or a stray ad-hoc command, would run) previously
+    produced a real Tesseract.*.nupkg under the *literal* upstream
+    package id "Tesseract"; if that were ever published by mistake, it
+    would collide with the real charlesw/tesseract package on nuget.org.
+    GeneratePackageOnBuild now defaults to false (every real call site's
+    own -p:GeneratePackageOnBuild=false override becomes redundant, but
+    still fine to leave for clarity), and PackageId no longer collides
+    with anything real, on top of Version/AssemblyVersion/Copyright/
+    PackageProjectUrl/RepositoryUrl/Description all being stale and
+    misleading (they land in the built assembly's own metadata, visible
+    via reflection, regardless of whether this project's own pack step
+    ever runs), pointed at charlesw's original project/version/2020
+    copyright even though this fork has diverged substantially since
+    (interop layer rewrite, browser-wasm support, SkiaSharp interop).
+    Updated to describe this fork accurately; PackageReleaseNotes removed
+    rather than left pointing at a changelog this fork doesn't maintain.
+  -->
   <PropertyGroup>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageId>Tesseract</PackageId>
-    <Authors>Charles Weld</Authors>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageId>Tesseract.CrossPlatform-dotnet</PackageId>
+    <Authors>Charles Weld; Jay Tuley</Authors>
     <Company />
     <Product>Tesseract</Product>
-    <Description>Tesseract 5 adds a new neural net (LSTM) based OCR engine which is focused on line recognition, but also still supports the legacy Tesseract OCR engine of Tesseract 3 which works by recognizing character patterns. Compatibility with Tesseract 3 is enabled by using the Legacy OCR Engine mode (--oem 0). It also needs traineddata files which support the legacy engine, for example those from the tessdata repository.</Description>
-    <Copyright>Copyright 2012-2020 Charles Weld</Copyright>
-    <PackageReleaseNotes>https://github.com/charlesw/tesseract/blob/master/ChangeLog.md</PackageReleaseNotes>
-    <PackageProjectUrl>https://github.com/charlesw/tesseract/</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/charlesw/tesseract/</RepositoryUrl>
+    <Description>A .NET wrapper for tesseract-ocr 5. This is jbtule's fork of charlesw/tesseract (https://github.com/jbtule/Tesseract.CrossPlatform-dotnet), with a rewritten [LibraryImport]-based interop layer, browser-wasm support, and other fixes -- built and packaged, alongside prebuilt cross-platform native binaries, by https://github.com/jbtule/tesseract-nuget-platforms into the Tesseract.CrossPlatform and Tesseract.Native NuGet packages.</Description>
+    <Copyright>Copyright 2012-2020 Charles Weld; 2026 Jay Tuley</Copyright>
+    <PackageProjectUrl>https://github.com/jbtule/Tesseract.CrossPlatform-dotnet</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/jbtule/Tesseract.CrossPlatform-dotnet</RepositoryUrl>
     <PackageTags>Tesseract Ocr</PackageTags>
-    <Version>5.2.0</Version>
-    <AssemblyVersion>5.2.0</AssemblyVersion>
+    <Version>5.5.2.200</Version>
+    <AssemblyVersion>5.5.2.200</AssemblyVersion>
     <NeutralLanguage></NeutralLanguage>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
