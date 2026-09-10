@@ -26,8 +26,18 @@
     <PackageProjectUrl>https://github.com/jbtule/tesseract-nuget-platforms</PackageProjectUrl>
     <RepositoryUrl>https://github.com/jbtule/tesseract-nuget-platforms</RepositoryUrl>
     <PackageTags>Tesseract Ocr SkiaSharp</PackageTags>
-    <Version>5.5.2.1</Version>
-    <AssemblyVersion>5.5.2.1</AssemblyVersion>
+    <!--
+      Tracks the same PACKAGE_VERSION as Tesseract.CrossPlatform/Tesseract.Native
+      (see versions.env's own comment for the <tesseract-pin>.<packaging-major*100+minor>
+      scheme): a deliberate choice, one version number across every package in a
+      release, bumped together, rather than an independent semver for this package.
+      This hardcoded value is the local-dev default for a bare `dotnet pack`; real
+      packing (scripts/smoketest-wasm.sh, release.yml once this package joins that
+      pipeline) passes -p:Version=$PACKAGE_VERSION explicitly and overrides it. Keep
+      this in sync by hand when versions.env's PACKAGE_VERSION changes.
+    -->
+    <Version>5.5.2.2</Version>
+    <AssemblyVersion>5.5.2.2</AssemblyVersion>
     <NeutralLanguage></NeutralLanguage>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <RootNamespace>Tesseract</RootNamespace>
@@ -52,9 +62,27 @@
     Tesseract.dll normally, it just stops NuGet from emitting that broken
     dependency to consumers, who reference Tesseract.CrossPlatform
     themselves anyway.
+
+    AdditionalProperties="AssemblyName=Tesseract.CrossPlatform": a second,
+    separate real bug, also found via an actual pack + restore + real
+    consumer build (scripts/smoketest-wasm.sh), not assumed. Without this,
+    Tesseract.csproj compiles here under its own default assembly name
+    ("Tesseract"), so this project's IL ends up referencing types like
+    Pix from assembly identity "Tesseract", but the actually-published,
+    installed Tesseract.CrossPlatform package ships an assembly literally
+    named "Tesseract.CrossPlatform" (see nuget/wrapper's own
+    -p:AssemblyName=Tesseract.CrossPlatform build step; needed there to
+    avoid a case-insensitive-filesystem filename collision with the
+    generic native "tesseract" alias). Different assembly name = different
+    strong identity even with identical types/namespace, so a consumer
+    installing both real packages together got CS0012 ("type 'Pix' is
+    defined in an assembly that is not referenced"). Building this
+    reference under the *same* renamed identity real consumers actually
+    have makes this project's compiled output match reality.
   -->
   <ItemGroup>
-    <ProjectReference Include="..\Tesseract\Tesseract.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\Tesseract\Tesseract.csproj" PrivateAssets="all"
+                       AdditionalProperties="AssemblyName=Tesseract.CrossPlatform" />
   </ItemGroup>
 
 </Project>

@@ -21,9 +21,19 @@
     </PackageReference>
   </ItemGroup>
 
+  <!--
+    The direct Tesseract.csproj reference here must build under the same
+    AssemblyName=Tesseract.CrossPlatform override Tesseract.CrossPlatform.SkiaSharp's
+    own Tesseract.csproj reference uses (see that project's own comment for why):
+    otherwise MSBuild builds Tesseract.csproj *twice* in this graph, under two
+    different assembly identities ("Tesseract" from this direct reference,
+    "Tesseract.CrossPlatform" transitively via the other), and this project's own
+    Pix/PixColor/etc. usage wouldn't type-match what Tesseract.CrossPlatform.SkiaSharp's
+    methods actually expect.
+  -->
   <ItemGroup>
     <ProjectReference Include="..\Tesseract.CrossPlatform.SkiaSharp\Tesseract.CrossPlatform.SkiaSharp.csproj" />
-    <ProjectReference Include="..\Tesseract\Tesseract.csproj" />
+    <ProjectReference Include="..\Tesseract\Tesseract.csproj" AdditionalProperties="AssemblyName=Tesseract.CrossPlatform" />
   </ItemGroup>
 
   <!--
