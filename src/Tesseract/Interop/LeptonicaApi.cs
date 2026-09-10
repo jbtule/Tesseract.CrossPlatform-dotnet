@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using InteropDotNet;
 
 namespace Tesseract.Interop
@@ -21,14 +22,34 @@ namespace Tesseract.Interop
         // environ.h -- suppresses every leptonica message regardless of
         // severity. Desktop RIDs are unaffected: this only runs under wasm.
         private const int L_SEVERITY_NONE = 6;
+        private static int msgSeverityInitialized;
 
         static LeptonicaApi()
         {
             NativeLibraryResolver.Initialize();
-            if (System.OperatingSystem.IsBrowser())
-            {
-                setMsgSeverity(L_SEVERITY_NONE);
-            }
+            SuppressConsoleOutputUnderWasm();
+        }
+
+        // Callable from both this class's own static constructor and
+        // TessApi's (see that class's matching call) -- a real bug, not
+        // theorized: a consumer whose own code constructs TesseractEngine
+        // before ever touching LeptonicaApi/Pix (the natural, common
+        // pattern -- build the engine once, reuse it per scan) never runs
+        // *this* class's static constructor before TessBaseAPIInit4 fires,
+        // which internally calls into leptonica for the same font-loading
+        // path this whole fix targets -- so the suppression call arrived
+        // too late to matter. Reproduced directly (a one-line construction-
+        // order swap in smoketest-wasm) before fixing. Idempotent via the
+        // same Interlocked.Exchange-guard pattern NativeLibraryResolver.Initialize
+        // already uses for the identical "whichever class gets touched
+        // first" problem, so it's safe to call from both places.
+        internal static void SuppressConsoleOutputUnderWasm()
+        {
+            if (!System.OperatingSystem.IsBrowser())
+                return;
+            if (Interlocked.Exchange(ref msgSeverityInitialized, 1) != 0)
+                return;
+            setMsgSeverity(L_SEVERITY_NONE);
         }
 
         [LibraryImport(Constants.LeptonicaDllName, EntryPoint = "setMsgSeverity")]

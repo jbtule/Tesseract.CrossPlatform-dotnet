@@ -13,6 +13,16 @@ namespace Tesseract.Interop
         static TessApi()
         {
             NativeLibraryResolver.Initialize();
+            // Real construction-order bug, found and reproduced directly, not
+            // theorized: a consumer constructing TesseractEngine before ever
+            // touching LeptonicaApi/Pix (the natural, common pattern) only
+            // runs *this* class's static constructor first -- so the wasm
+            // stderr-suppression call also has to happen from here, not just
+            // LeptonicaApi's own cctor, to guarantee it runs before
+            // TessBaseAPIInit4's internal leptonica calls regardless of which
+            // class the consumer's code happens to touch first. See that
+            // method's own comment for the full writeup.
+            LeptonicaApi.SuppressConsoleOutputUnderWasm();
         }
 
         //XHTML Begin Tag:
