@@ -23,6 +23,21 @@
   
   <PropertyGroup>
     <DocumentationFile>.\Tesseract.xml</DocumentationFile>
+    <!--
+      CS1591 (missing XML comment for a publicly visible member): ~500 of
+      these across the codebase, since DocumentationFile turns it on but
+      about half the public API here predates XML docs ever being enforced
+      upstream. Suppressing the warning, not dropping DocumentationFile
+      entirely: the generated Tesseract.xml has ~255 members with real,
+      substantive <summary> content (confirmed via a real build, not
+      assumed; packed as lib/<tfm>/Tesseract.CrossPlatform.xml by
+      nuget/wrapper) that's worth shipping for IntelliSense. Stub-generating
+      fake docs for the undocumented half (e.g. "Gets the X" derived
+      mechanically from a member's name) would silence CS1591 too, but adds
+      no real information while looking like it does: worse than just
+      not claiming documentation exists where it doesn't.
+    -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
