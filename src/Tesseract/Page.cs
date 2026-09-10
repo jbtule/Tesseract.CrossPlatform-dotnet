@@ -202,7 +202,6 @@ namespace Tesseract
         /// <summary>
         /// Gets the page's content as an UNLV text.
         /// </summary>
-        /// <param name="pageNum">The page number (zero based).</param>
         /// <returns>The OCR'd output as an UNLV text string.</returns>
         public string GetUNLVText()
         {
@@ -311,7 +310,7 @@ namespace Tesseract
         /// </remarks>
         /// <param name="orientation">The detected clockwise page rotation in degrees (0, 90, 180, or 270).</param>
         /// <param name="confidence">The confidence level of the orientation (15 is reasonably confident).</param>
-        /// <param name="scriptName">The name of the script (e.g. Latin)<param>
+        /// <param name="scriptName">The name of the script (e.g. Latin)</param>
         /// <param name="scriptConfidence">The confidence level in the script</param>
         public void DetectBestOrientationAndScript(out int orientation, out float confidence, out string scriptName, out float scriptConfidence)
         {

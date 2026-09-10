@@ -173,6 +173,8 @@ namespace Tesseract
         /// An optional sequence of tesseract configuration files to load, encoded using UTF8 without BOM
         /// with Unix end of line characters you can use an advanced text editor such as Notepad++ to accomplish this.
         /// </param>
+        /// <param name="initialOptions">An optional set of variable name/value pairs to set as part of engine initialisation.</param>
+        /// <param name="setOnlyNonDebugVariables">If <c>true</c>, only non-debug variables may be set using <paramref name="initialOptions"/> during initialisation.</param>
         public TesseractEngine(string datapath, string language, EngineMode engineMode, IEnumerable<string> configFiles, IDictionary<string, object> initialOptions, bool setOnlyNonDebugVariables)
         {
             Guard.RequireNotNullOrEmpty("language", language);

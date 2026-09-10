@@ -65,6 +65,8 @@ namespace Tesseract
         SingleChar = 10,
 
         /// <summary>
+        /// Find as much text as possible in no particular order.
+        /// </summary>
         SparseText = 11,
 
         /// <summary>

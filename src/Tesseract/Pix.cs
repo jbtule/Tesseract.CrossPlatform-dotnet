@@ -238,6 +238,14 @@ namespace Tesseract
             return same != 0;
         }
 
+        // Equals compares actual pixel content (via pixEqual), not handle identity, so a
+        // correct GetHashCode has to be consistent with that: two Pix instances can only be
+        // content-equal if they share the same dimensions (different dimensions can't have
+        // identical pixel data by definition), so hashing on those is safe -- it doesn't need
+        // to inspect every pixel to satisfy the .NET contract that equal objects report equal
+        // hash codes, just to never disagree with what Equals would say.
+        public override int GetHashCode() => HashCode.Combine(Width, Height, Depth);
+
         #endregion
 
         #region Save methods
