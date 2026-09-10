@@ -12,6 +12,11 @@
     standard pattern for a shared library that wants to support a wasm consumer without
     forcing one on every consumer; see the WASM backlog plan's Phase 3 (Pix.FromRawPixelData)
     for the eventual wasm-side story past this converter.
+
+    SkiaSharp.NativeAssets.Linux is also needed explicitly: unlike win/osx, the main
+    SkiaSharp package doesn't bundle a Linux native asset (confirmed the hard way, via a
+    real CI DllNotFoundException for libSkiaSharp.so on linux-x64/linux-arm64 without it).
+    Same no-op-elsewhere pattern as the WebAssembly package above.
   -->
   <PropertyGroup>
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
@@ -56,6 +61,7 @@
   <ItemGroup>
     <PackageReference Include="SkiaSharp" Version="4.152.0" />
     <PackageReference Include="SkiaSharp.NativeAssets.WebAssembly" Version="4.152.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="4.152.0" />
   </ItemGroup>
 
   <!--
