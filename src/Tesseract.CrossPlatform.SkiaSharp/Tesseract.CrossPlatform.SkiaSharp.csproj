@@ -38,8 +38,23 @@
     <PackageReference Include="SkiaSharp.NativeAssets.WebAssembly" Version="4.152.0" />
   </ItemGroup>
 
+  <!--
+    PrivateAssets="all": a plain ProjectReference to Tesseract.csproj here
+    packs as a nuspec dependency on package id "Tesseract" (that project's
+    own default PackageId, from its assembly name) at whatever $(Version)
+    this pack run happens to carry: a real bug, found via an actual
+    `dotnet pack` + restore, not assumed. It resolves against the real,
+    unrelated "Tesseract" package on nuget.org (charlesw's own, not this
+    fork's "Tesseract.CrossPlatform"), which obviously never has a matching
+    version. This package is only ever meaningful installed alongside a
+    real Tesseract.CrossPlatform (see this project's own Description).
+    PrivateAssets="all" still compiles this project against the real
+    Tesseract.dll normally, it just stops NuGet from emitting that broken
+    dependency to consumers, who reference Tesseract.CrossPlatform
+    themselves anyway.
+  -->
   <ItemGroup>
-    <ProjectReference Include="..\Tesseract\Tesseract.csproj" />
+    <ProjectReference Include="..\Tesseract\Tesseract.csproj" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
