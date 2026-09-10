@@ -43,6 +43,12 @@ namespace Tesseract.Tests
             "textord_tabfind_show_strokewidths", "textord_tablefind_show_mark",
             "textord_tablefind_show_stats",
             "wordrec_blob_pause", "wordrec_display_all_blobs",
+            // TesseractEngine.Initialise sets debug_file="/dev/null" under wasm (redirects
+            // tesseract's own tprintf() away from stderr -- see that method's own comment),
+            // so this variable's *value* legitimately differs from the desktop golden fixture's
+            // default empty string, even though the variable itself is present on both. A real,
+            // understood, wasm-specific difference, not a regression.
+            "debug_file",
         };
 
         // CanPrintVariables' line order isn't part of the invariant being tested (see
