@@ -3,12 +3,18 @@
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Runtime.Versioning;
 
 namespace Tesseract
 {
     /// <summary>
     /// Converts a <see cref="Bitmap"/> to a <see cref="Pix"/>.
     /// </summary>
+    // System.Drawing.Common's Bitmap/BitmapData APIs are genuinely Windows-only on net6+
+    // (this was already true, just undeclared -- see Tesseract.Drawing.csproj's own SYSTEM_DRAWING_SUPPORT
+    // gate). Declaring it lets the platform-compat analyzer stop flagging every call site
+    // in here, and correctly flags this class itself as Windows-only to any caller.
+    [SupportedOSPlatform("windows")]
     public class BitmapToPixConverter
     {
         public BitmapToPixConverter()

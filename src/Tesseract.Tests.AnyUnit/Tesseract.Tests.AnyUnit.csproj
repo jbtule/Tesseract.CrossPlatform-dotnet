@@ -36,7 +36,7 @@
     <PackageReference Include="Tesseract.Native" Version="5.5.2.200" />
     <ProjectReference Include="..\..\..\..\..\AnyUnit\AnyUnit\AnyUnit.csproj" />
     <ProjectReference Include="..\..\..\..\..\AnyUnit\Contrib\AnyUnit.Style.Nunit\AnyUnit.Style.Nunit.csproj" />
-    <ProjectReference Include="..\..\..\..\..\AnyUnit\AnyUnit.Runner.Bootstrap\AnyUnit.Runner.Bootstrap.csproj" />
+    <ProjectReference Include="..\..\..\..\..\AnyUnit\Runner\Bootstrap\AnyUnit.Runner.Bootstrap.csproj" />
   </ItemGroup>
 
   <ItemGroup>

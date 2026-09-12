@@ -3,10 +3,14 @@
 using System;
 using System.Drawing;
 using System.Drawing.Imaging;
+using System.Runtime.Versioning;
 using SD = System.Drawing;
 
 namespace Tesseract
 {
+    // See BitmapToPixConverter.cs's own comment: System.Drawing.Common's Bitmap/BitmapData
+    // APIs are genuinely Windows-only on net6+.
+    [SupportedOSPlatform("windows")]
     public class PixToBitmapConverter
     {
         public Bitmap Convert(Pix pix, bool includeAlpha = false)
