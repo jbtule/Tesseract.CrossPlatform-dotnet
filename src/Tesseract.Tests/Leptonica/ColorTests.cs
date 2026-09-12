@@ -1,4 +1,6 @@
-﻿using NUnit.Framework;
+﻿using AnyUnit.Run;
+using AnyUnit.Style.Nunit;
+using AnyUnit.Constraints;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +10,7 @@ using System.Threading.Tasks;
 namespace Tesseract.Tests.Leptonica
 {
     [TestFixture]
-    public class ColorTests
+    public class ColorTests : AssertionHelper
     {
 #if NETFULL
         [TestCase]

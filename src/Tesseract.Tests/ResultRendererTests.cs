@@ -1,4 +1,6 @@
-﻿using NUnit.Framework;
+﻿using AnyUnit.Run;
+using AnyUnit.Style.Nunit;
+using AnyUnit.Constraints;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -14,7 +16,10 @@ namespace Tesseract.Tests
     {
         #region Test setup and teardown
 
-        private TesseractEngine _engine;
+        // Non-nullable, null-forgiving default: always assigned by Inititialse() before
+        // any test runs (NUnit's own SetUp/TearDown contract), so every real usage site
+        // is safe without a null check.
+        private TesseractEngine _engine = null!;
 
         [SetUp]
         public void Inititialse()
@@ -27,7 +32,7 @@ namespace Tesseract.Tests
         {
             if (_engine != null) {
                 _engine.Dispose();
-                _engine = null;
+                _engine = null!;
             }
         }
 

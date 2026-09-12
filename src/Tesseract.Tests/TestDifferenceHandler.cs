@@ -1,4 +1,7 @@
-﻿using NUnit.Framework;
+﻿using AnyUnit;
+using AnyUnit.Run;
+using AnyUnit.Style.Nunit;
+using AnyUnit.Constraints;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -9,6 +12,14 @@ using System.Text.RegularExpressions;
 
 namespace Tesseract.Tests
 {
+    // These handlers are plain helper objects (not [TestFixture]s), invoked from a
+    // fixture's test method via TesseractTestBase.CheckResult - real NUnit's Assert.Fail
+    // is fully static and callable from anywhere, but AnyUnit's Assert is an instance
+    // property only a fixture gets (injected per-test by the harness; see AssertionHelper).
+    // Assert.Fail(message) just throws AssertionException(message) internally either way,
+    // so throwing it directly here is exactly equivalent, without needing an Assert
+    // instance these classes have no way to obtain.
+
     /// <summary>
     /// Determines what action is taken when the test result doesn't match the expected (reference) result.
     /// </summary>
@@ -30,7 +41,7 @@ namespace Tesseract.Tests
                 var expectedResult = TestUtils.NormaliseNewLine(File.ReadAllText(expectedResultFilename));
                 if (expectedResult != actualResult)
                 {
-                    Assert.Fail($"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\".");
+                    throw new AssertionException($"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\".");
                 }
             }
             else
@@ -98,7 +109,7 @@ namespace Tesseract.Tests
             var expectedMasked = DecimalNumberPattern.Replace(expectedResult, "#");
             if (actualMasked != expectedMasked)
             {
-                Assert.Fail(
+                throw new AssertionException(
                     $"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\" -- and not just by decimal-value drift (structure/text differs).");
             }
 
@@ -112,7 +123,7 @@ namespace Tesseract.Tests
                 var delta = Math.Abs(actualNumbers[i] - expectedNumbers[i]);
                 if (delta > tolerance)
                 {
-                    Assert.Fail(
+                    throw new AssertionException(
                         $"Numeric value #{i} in \"{actualResultFilename}\" differs from \"{expectedResultFilename}\" by {delta:0.######} (tolerance {tolerance}): expected {expectedNumbers[i]} but was {actualNumbers[i]}.");
                 }
             }
@@ -155,7 +166,7 @@ namespace Tesseract.Tests
     {
         private readonly HashSet<string> ignorableVariableNames;
 
-        public UnorderedLinesTestDifferenceHandler(IEnumerable<string> ignorableVariableNames = null)
+        public UnorderedLinesTestDifferenceHandler(IEnumerable<string>? ignorableVariableNames = null)
         {
             this.ignorableVariableNames = ignorableVariableNames != null
                 ? new HashSet<string>(ignorableVariableNames, StringComparer.Ordinal)
@@ -175,7 +186,7 @@ namespace Tesseract.Tests
             var expectedLines = SortedLines(expectedResultFilename);
             if (!actualLines.SequenceEqual(expectedLines, StringComparer.Ordinal))
             {
-                Assert.Fail(
+                throw new AssertionException(
                     $"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\" -- and not just by line order or a known/named difference (a material difference remains).");
             }
         }
@@ -222,7 +233,7 @@ namespace Tesseract.Tests
                     expectedResult = TestUtils.NormaliseNewLine(File.ReadAllText(expectedResultFilename));
                     if (expectedResult != actualResult)
                     {
-                        Assert.Fail($"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\".");
+                        throw new AssertionException($"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\".");
                     }
                 }
             }

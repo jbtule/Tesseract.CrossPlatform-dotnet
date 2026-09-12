@@ -1,4 +1,6 @@
-﻿using NUnit.Framework;
+﻿using AnyUnit.Run;
+using AnyUnit.Style.Nunit;
+using AnyUnit.Constraints;
 using System;
 using System.IO;
 
@@ -17,14 +19,16 @@ namespace Tesseract.Tests
 
         #region Setup\TearDown
 
-        private TesseractEngine engine;
+        // Non-nullable, null-forgiving default: each test assigns this itself before use
+        // (no shared [SetUp] here), so every real usage site is safe without a null check.
+        private TesseractEngine engine = null!;
 
         [TearDown]
         public void Dispose()
         {
             if (engine != null) {
                 engine.Dispose();
-                engine = null;
+                engine = null!;
             }
         }
 
@@ -155,8 +159,13 @@ namespace Tesseract.Tests
                         Orientation orientation;
                         float confidence;
 
+                        // Deliberately exercising the obsolete Orientation-enum overload
+                        // itself -- this test's whole point is regression coverage of the
+                        // legacy API, not a call site that should be migrated.
+#pragma warning disable CS0618
                         page.DetectBestOrientation(out orientation, out confidence);
-                        
+#pragma warning restore CS0618
+
                         Orientation expectedOrientation;
                         float expectedDeskew;
                         ExpectedOrientation(expectedOrientationDegrees, out expectedOrientation, out expectedDeskew);

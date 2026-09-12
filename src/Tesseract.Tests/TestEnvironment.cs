@@ -3,7 +3,9 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using InteropDotNet;
-using NUnit.Framework;
+using AnyUnit.Run;
+using AnyUnit.Style.Nunit;
+using AnyUnit.Constraints;
 
 namespace Tesseract.Tests
 {
@@ -18,11 +20,11 @@ namespace Tesseract.Tests
     internal static class TestEnvironment
     {
         private static readonly Lazy<string> repoRoot = new Lazy<string>(
-            () => FindAncestor(TestContext.CurrentContext.WorkDirectory,
+            () => FindAncestor(AppContext.BaseDirectory,
                 d => File.Exists(Path.Combine(d, "versions.env"))));
 
         private static readonly Lazy<string> projectSourceRoot = new Lazy<string>(
-            () => FindAncestor(TestContext.CurrentContext.WorkDirectory,
+            () => FindAncestor(AppContext.BaseDirectory,
                 d => Directory.Exists(Path.Combine(d, "Results")) && Directory.Exists(Path.Combine(d, "Data"))));
 
         private static readonly Lazy<string> pinnedTesseractVersion = new Lazy<string>(ComputePinnedVersion);
@@ -93,7 +95,7 @@ namespace Tesseract.Tests
     /// normal default resolution (whatever's on the system), same as it always has.
     /// </summary>
     [SetUpFixture]
-    internal class GlobalTestSetup
+    internal class GlobalTestSetup : AssertionHelper
     {
         [OneTimeSetUp]
         public void SetNativeSearchPath()
@@ -102,7 +104,7 @@ namespace Tesseract.Tests
             if (!string.IsNullOrEmpty(explicitDir) && Directory.Exists(explicitDir))
             {
                 LibraryLoader.CustomSearchPath = explicitDir;
-                TestContext.Progress.WriteLine($"Using native libraries from TESSERACT_NATIVE_DIR: {explicitDir}");
+                Log.WriteLine($"Using native libraries from TESSERACT_NATIVE_DIR: {explicitDir}");
                 return;
             }
 
@@ -111,11 +113,11 @@ namespace Tesseract.Tests
             if (Directory.Exists(stagedDir))
             {
                 LibraryLoader.CustomSearchPath = stagedDir;
-                TestContext.Progress.WriteLine($"Using native libraries from repo-pinned build: {stagedDir}");
+                Log.WriteLine($"Using native libraries from repo-pinned build: {stagedDir}");
                 return;
             }
 
-            TestContext.Progress.WriteLine(
+            Log.WriteLine(
                 $"No TESSERACT_NATIVE_DIR set and no staged build found at \"{stagedDir}\" " +
                 "(run scripts/build-native.sh/.ps1 for this RID to produce one) -- falling back " +
                 "to the OS's normal library search. CanGetVersion and the golden-fixture tests " +

@@ -8,11 +8,14 @@ namespace Tesseract.Tests
     [DataContract]
     public class TesseractResultSet
     {
+        // These properties are reference types that DataContractSerializer/-Deserializer
+        // populates by reflection, so they're legitimately unset (null) until then --
+        // nullable, not a real invariant violation.
         [DataContract]
         public class Page
         {
             public Rect Region { get; set; }
-            public List<Block> Blocks { get; set; }
+            public List<Block>? Blocks { get; set; }
         }
 
         [DataContract]
@@ -20,9 +23,9 @@ namespace Tesseract.Tests
         {
             public Rect Region { get; set; }
             public float Confidence { get; set; }
-            public string Text { get; set; }
+            public string? Text { get; set; }
 
-            public List<Line> Lines { get; set; }
+            public List<Line>? Lines { get; set; }
         }
 
         [DataContract]
@@ -30,9 +33,9 @@ namespace Tesseract.Tests
         {
             public Rect Region { get; set; }
             public float Confidence { get; set; }
-            public string Text { get; set; }
+            public string? Text { get; set; }
 
-            public List<Word> Words { get; set; }
+            public List<Word>? Words { get; set; }
         }
 
         [DataContract]
@@ -40,9 +43,9 @@ namespace Tesseract.Tests
         {
             public Rect Region { get; set; }
             public float Confidence { get; set; }
-            public string Text { get; set; }
-            
-            public List<Symbol> Words { get; set; }
+            public string? Text { get; set; }
+
+            public List<Symbol>? Words { get; set; }
         }
 
         [DataContract]

@@ -34,7 +34,13 @@ namespace Tesseract.Tests
             processInfo.RedirectStandardError = true;
             processInfo.RedirectStandardOutput = true;
 
-            process = Process.Start(processInfo);
+            // Process.Start(ProcessStartInfo) is genuinely nullable -- it returns null if
+            // no new process resource was started (e.g. reusing an existing process),
+            // which can't happen here (always a fresh ProcessStartInfo), but the compiler
+            // can't know that, and silently dereferencing a null here would otherwise be a
+            // real NullReferenceException with no useful message.
+            process = Process.Start(processInfo)
+                ?? throw new InvalidOperationException($"Process.Start returned null for command '{command}'.");
             process.WaitForExit();
 
             // *** Read the streams ***

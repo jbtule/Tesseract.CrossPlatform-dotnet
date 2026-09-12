@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using NUnit.Framework;
+using AnyUnit.Run;
+using AnyUnit.Style.Nunit;
+using AnyUnit.Constraints;
 
 namespace Tesseract.Tests.Leptonica.PixTests
 {
     [TestFixture]
-    public unsafe class DataAccessTests
+    public unsafe class DataAccessTests : AssertionHelper
     {
         const int Width = 59, Height = 53;
          

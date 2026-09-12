@@ -1,6 +1,7 @@
 using System;
-using NUnit.Framework;
-using NUnit.Framework.Interfaces;
+using System.Reflection;
+using AnyUnit;
+using AnyUnit.Style.Nunit;
 
 namespace Tesseract.Tests
 {
@@ -26,25 +27,33 @@ namespace Tesseract.Tests
     /// wasm-side test fixtures can be constructed that way instead of by file load, the
     /// equivalent coverage can run for real there too, and this attribute should come off
     /// whichever tests get rewritten to use it.
+    ///
+    /// Ported from real NUnit's ITestAction (NUnit.Framework.Interfaces.ITest,
+    /// ActionTargets.Test/Suite) to AnyUnit.Style.Nunit's own, narrower ITestAction:
+    /// MethodInfo instead of ITest, no ActionTargets (AnyUnit only ever runs this
+    /// around individual tests, never once per fixture - see that interface's own
+    /// remarks). Assert.Ignore is real NUnit's static entry point for throwing
+    /// NUnit's own ignore signal from anywhere; AnyUnit has no static Assert facade
+    /// (Assert is an instance property a fixture gets via AssertionHelper - this
+    /// attribute isn't one), so it throws AnyUnit's IgnoreException directly instead,
+    /// which is all Assert.Ignore does under the hood anyway.
     /// </remarks>
     /// </summary>
     [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class, AllowMultiple = false)]
     public class RequiresImageCodecsAttribute : Attribute, ITestAction
     {
-        public void BeforeTest(ITest test)
+        public void BeforeTest(MethodInfo method)
         {
             if (OperatingSystem.IsBrowser())
             {
-                Assert.Ignore(
+                throw new IgnoreException(
                     "Requires image codec support (TIFF/PNG/JPEG/GIF via Leptonica), not " +
                     "available in the browser-wasm native build -- see RequiresImageCodecsAttribute's own remarks.");
             }
         }
 
-        public void AfterTest(ITest test)
+        public void AfterTest(MethodInfo method)
         {
         }
-
-        public ActionTargets Targets => ActionTargets.Test;
     }
 }

@@ -1,7 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -13,17 +15,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.0" />
-    <PackageReference Include="nunit" Version="3.13.3" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.3.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Tesseract.Drawing\Tesseract.Drawing.csproj" />
     <ProjectReference Include="..\Tesseract\Tesseract.csproj" />
+    <!-- AnyUnit instead of nunit/NUnit3TestAdapter/Microsoft.NET.Test.Sdk - no
+         Tesseract.Native package reference needed here (unlike the
+         Tesseract.Tests.AnyUnit spike this replaces): this project already gets
+         its native binaries from the repo's own stage/&lt;rid&gt;/native convention,
+         via GlobalTestSetup's LibraryLoader.CustomSearchPath override. -->
+    <ProjectReference Include="..\..\..\..\..\AnyUnit\AnyUnit\AnyUnit.csproj" />
+    <ProjectReference Include="..\..\..\..\..\AnyUnit\Contrib\AnyUnit.Style.Nunit\AnyUnit.Style.Nunit.csproj" />
+    <ProjectReference Include="..\..\..\..\..\AnyUnit\AnyUnit.Runner.Bootstrap\AnyUnit.Runner.Bootstrap.csproj" />
   </ItemGroup>
 
   <!--
@@ -38,8 +39,8 @@
     <None Include="Results\**\*.*" CopyToOutputDirectory="PreserveNewest" />
     <None Include="tessdata\**\*.*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
-
-  <ItemGroup>
-    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
-  </ItemGroup>
+  <!-- The {82a7f48d-...} <Service> marker (identifies this project as a VSTest
+       test project to `dotnet test`/Visual Studio) is gone along with
+       Microsoft.NET.Test.Sdk - this is a plain console app now, run directly
+       (see Program.cs), not through the VSTest test host. -->
 </Project>

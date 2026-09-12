@@ -1,4 +1,6 @@
-﻿using NUnit.Framework;
+﻿using AnyUnit.Run;
+using AnyUnit.Style.Nunit;
+using AnyUnit.Constraints;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -9,7 +11,12 @@ using System.Threading.Tasks;
 
 namespace Tesseract.Tests
 {
-    public abstract class TesseractTestBase
+    // Real NUnit's Assert/TestContext are fully static, callable from anywhere;
+    // AnyUnit's Assert is an instance property a fixture only gets by inheriting
+    // AssertionHelper (injected per-test by the harness) - so this shared base
+    // (every concrete fixture in this suite derives from it) has to inherit it
+    // too for Assert.* to resolve in any of them.
+    public abstract class TesseractTestBase : AssertionHelper
     {
         /// <summary>
         /// Determines how test differences are handled
@@ -29,7 +36,12 @@ namespace Tesseract.Tests
 
         protected static string AbsolutePath(string relativePath)
         {
-            return Path.Combine(TestContext.CurrentContext.WorkDirectory, relativePath);
+            // Real NUnit's TestContext.CurrentContext.WorkDirectory - AnyUnit has no
+            // TestContext equivalent (no per-test ambient state at all beyond the
+            // Assert/Log an AssertionHelper subclass gets). The test working directory
+            // is just the output directory either way; AppContext.BaseDirectory is the
+            // portable, framework-agnostic way to get it.
+            return Path.Combine(AppContext.BaseDirectory, relativePath);
         }
 
         #region File Helpers
@@ -61,7 +73,12 @@ namespace Tesseract.Tests
         
         protected static string TestResultRunFile(string path)
         {
-            var testRunDirectory = TestResultRunDirectory(Path.GetDirectoryName(path));
+            // Path.GetDirectoryName returns null only for a root path (e.g. "C:\") or an
+            // empty input -- never for the relative "subdir/file.ext"-shaped paths this is
+            // actually called with, but it's nullable regardless. Empty string is the
+            // correct fallback: "no subdirectory", same as an already-empty GetDirectoryName
+            // result for a bare filename.
+            var testRunDirectory = TestResultRunDirectory(Path.GetDirectoryName(path) ?? string.Empty);
             var testFileName = Path.GetFileName(path);
 
             return Path.GetFullPath(Path.Combine(testRunDirectory, testFileName));
