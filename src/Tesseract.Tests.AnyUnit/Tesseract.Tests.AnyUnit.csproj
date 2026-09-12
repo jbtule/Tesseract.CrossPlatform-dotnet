@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Spike: replace Tesseract.Tests's real NUnit-based suite with AnyUnit's
+    NUnit-style attributes/asserts, to find what doesn't port cleanly.
+    Sources are physical copies of Tesseract.Tests's own .cs files (not
+    Links) - the migration needs real edits (namespace usings, Assert
+    model), and those edits must not touch the original NUnit-based
+    project.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
+    <NoWarn>$(NoWarn);CS0618</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Managed wrapper: ProjectReference to source (not the published
+         Tesseract.CrossPlatform package) so this repo's own
+         InternalsVisibleTo("Tesseract.Tests.AnyUnit") applies - BaseApiTests
+         reaches internal API surface (TessApi) the published package
+         wasn't built with visibility for. -->
+    <ProjectReference Include="..\Tesseract.Drawing\Tesseract.Drawing.csproj" />
+    <ProjectReference Include="..\Tesseract\Tesseract.csproj" />
+    <!-- Native binaries: the actual prebuilt tesseract/leptonica libraries
+         only ship in Tesseract.Native.* (a pure runtime-asset package, no
+         managed code of its own - safe to combine with the ProjectReference
+         above, unlike PackageReference-ing Tesseract.CrossPlatform itself,
+         which would double up the managed Pix/TesseractEngine types). The
+         meta package auto-selects this machine's RID at restore/build time,
+         same as any other native-asset NuGet package - no manual RID
+         plumbing needed. -->
+    <PackageReference Include="Tesseract.Native" Version="5.5.2.200" />
+    <ProjectReference Include="..\..\..\..\..\AnyUnit\AnyUnit\AnyUnit.csproj" />
+    <ProjectReference Include="..\..\..\..\..\AnyUnit\Contrib\AnyUnit.Style.Nunit\AnyUnit.Style.Nunit.csproj" />
+    <ProjectReference Include="..\..\..\..\..\AnyUnit\AnyUnit.Runner.Bootstrap\AnyUnit.Runner.Bootstrap.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\Tesseract.Tests\Data\**\*.*" CopyToOutputDirectory="PreserveNewest" Link="Data\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\Tesseract.Tests\Results\**\*.*" CopyToOutputDirectory="PreserveNewest" Link="Results\%(RecursiveDir)%(Filename)%(Extension)" />
+    <None Include="..\Tesseract.Tests\tessdata\**\*.*" CopyToOutputDirectory="PreserveNewest" Link="tessdata\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+</Project>

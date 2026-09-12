@@ -15,4 +15,7 @@ using System.Runtime.InteropServices;
 
 // Ensure internals are visible to the test assembly so we can test them too.
 [assembly: InternalsVisibleTo("Tesseract.Tests")]
+// AnyUnit-ported spike copy of Tesseract.Tests (see
+// src/Tesseract.Tests.AnyUnit) - needs the same internals access.
+[assembly: InternalsVisibleTo("Tesseract.Tests.AnyUnit")]
 
