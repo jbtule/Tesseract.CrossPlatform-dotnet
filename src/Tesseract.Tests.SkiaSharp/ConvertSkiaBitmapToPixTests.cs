@@ -1,4 +1,6 @@
-using NUnit.Framework;
+using AnyUnit.Run;
+using AnyUnit.Style.Nunit;
+using AnyUnit.Constraints;
 using SkiaSharp;
 using System;
 using System.IO;
@@ -6,17 +8,17 @@ using System.IO;
 namespace Tesseract.Tests.SkiaSharp
 {
     [TestFixture]
-    public class ConvertSkiaBitmapToPixTests
+    public class ConvertSkiaBitmapToPixTests : AssertionHelper
     {
-        // TestContext.CurrentContext.WorkDirectory, not AppContext.BaseDirectory -- matches
-        // Tesseract.Tests's own TesseractTestBase.AbsolutePath convention, and matters beyond
-        // consistency: this file is also compiled directly into the wasm test runner (see the
-        // WASM backlog plan), where the working directory is deliberately set to a staged
-        // fixture root before tests run and AppContext.BaseDirectory would resolve somewhere
-        // else entirely.
+        // AppContext.BaseDirectory, not TestContext.CurrentContext.WorkDirectory (AnyUnit has
+        // no TestContext equivalent) -- matches Tesseract.Tests's own TesseractTestBase.
+        // AbsolutePath fix, same reasoning: this file is also compiled directly into the
+        // AnyUnit-based wasm test runner, where the working directory is deliberately set to
+        // a staged fixture root before tests run and AppContext.BaseDirectory resolves there
+        // too (it's just the output directory either way).
         private static string TestFilePath(string path)
         {
-            return Path.Combine(NUnit.Framework.TestContext.CurrentContext.WorkDirectory, "Data", path);
+            return Path.Combine(AppContext.BaseDirectory, "Data", path);
         }
 
         [Test]
@@ -101,11 +103,6 @@ namespace Tesseract.Tests.SkiaSharp
                 for (int x = 0; x < width; x += width) {
                     PixColor sourcePixel = bmp.GetPixel(x, y).ToPixColor();
                     PixColor destPixel = GetPixel(pix, x, y);
-                    // Plain interpolated-string message, no params object[] args: NUnit 4.x
-                    // (used by the wasm test runner this file also compiles into, see the
-                    // WASM backlog plan) dropped the message-format-args Assert.That overloads
-                    // that NUnit 3.x (used by desktop's Tesseract.Tests.SkiaSharp.csproj) still
-                    // has -- this form compiles against both.
                     if (checkAlpha) {
                         Assert.That(destPixel, Is.EqualTo(sourcePixel), $"Expected pixel at <{x},{y}> to be same in both source and dest.");
                     } else {

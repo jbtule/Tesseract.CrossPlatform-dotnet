@@ -7,6 +7,7 @@
     ConvertBitmapToPixTests, which is Windows-only because System.Drawing.Common is).
   -->
   <PropertyGroup>
+    <OutputType>Exe</OutputType>
     <TargetFrameworks>net8.0;net9.0;net10.0</TargetFrameworks>
     <IsPackable>false</IsPackable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -17,12 +18,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.0" />
-    <PackageReference Include="nunit" Version="3.13.3" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.3.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <!-- AnyUnit instead of nunit/NUnit3TestAdapter/Microsoft.NET.Test.Sdk - see
+         Tesseract.Tests.csproj's own identical swap for the full reasoning. -->
+    <ProjectReference Include="..\..\..\..\..\AnyUnit\AnyUnit\AnyUnit.csproj" />
+    <ProjectReference Include="..\..\..\..\..\AnyUnit\Contrib\AnyUnit.Style.Nunit\AnyUnit.Style.Nunit.csproj" />
+    <ProjectReference Include="..\..\..\..\..\AnyUnit\AnyUnit.Runner.Bootstrap\AnyUnit.Runner.Bootstrap.csproj" />
   </ItemGroup>
 
   <!--
@@ -50,7 +50,6 @@
     <None Include="..\Tesseract.Tests\Data\Binarization\neo-8bit-grayscale.png" Link="Data\Binarization\neo-8bit-grayscale.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Service Include="{82a7f48d-3b50-4b1e-b82e-3ada8210c358}" />
-  </ItemGroup>
+  <!-- The {82a7f48d-...} <Service> marker (VSTest test-project identity) is gone
+       along with Microsoft.NET.Test.Sdk - plain console app now, run directly. -->
 </Project>

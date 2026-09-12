@@ -2,7 +2,9 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using InteropDotNet;
-using NUnit.Framework;
+using AnyUnit.Run;
+using AnyUnit.Style.Nunit;
+using AnyUnit.Constraints;
 
 namespace Tesseract.Tests.SkiaSharp
 {
@@ -13,9 +15,16 @@ namespace Tesseract.Tests.SkiaSharp
     /// override (default OS search) if neither exists. Duplicated rather than shared because
     /// this project deliberately doesn't reference Tesseract.Tests (see this project's own
     /// csproj comment).
+    ///
+    /// Ported from real NUnit: [SetUpFixture]/[OneTimeSetUp] get no Assert/Log injected by
+    /// AnyUnit unless the fixture itself implements IAssertionHelper (unlike a per-test
+    /// fixture) - inheriting AssertionHelper here gets a real Log; TestContext.Progress.
+    /// WriteLine -> Log.WriteLine, TestContext.CurrentContext.WorkDirectory -> AppContext.
+    /// BaseDirectory (see Tesseract.Tests's own TesseractTestBase for the identical fix,
+    /// same reasoning).
     /// </summary>
     [SetUpFixture]
-    internal class GlobalTestSetup
+    internal class GlobalTestSetup : AssertionHelper
     {
         [OneTimeSetUp]
         public void SetNativeSearchPath()
@@ -23,18 +32,18 @@ namespace Tesseract.Tests.SkiaSharp
             var explicitDir = Environment.GetEnvironmentVariable("TESSERACT_NATIVE_DIR");
             if (!string.IsNullOrEmpty(explicitDir) && Directory.Exists(explicitDir)) {
                 LibraryLoader.CustomSearchPath = explicitDir;
-                TestContext.Progress.WriteLine($"Using native libraries from TESSERACT_NATIVE_DIR: {explicitDir}");
+                Log.WriteLine($"Using native libraries from TESSERACT_NATIVE_DIR: {explicitDir}");
                 return;
             }
 
             var rid = RuntimeInformation.RuntimeIdentifier;
-            var dir = new DirectoryInfo(TestContext.CurrentContext.WorkDirectory);
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
             for (var i = 0; i < 12 && dir != null; i++, dir = dir.Parent) {
                 if (File.Exists(Path.Combine(dir.FullName, "versions.env"))) break;
             }
 
             if (dir == null) {
-                TestContext.Progress.WriteLine(
+                Log.WriteLine(
                     "Could not find repo root (versions.env) from the test working directory -- " +
                     "falling back to the OS's normal library search.");
                 return;
@@ -43,11 +52,11 @@ namespace Tesseract.Tests.SkiaSharp
             var stagedDir = Path.Combine(dir.FullName, "stage", rid, "native");
             if (Directory.Exists(stagedDir)) {
                 LibraryLoader.CustomSearchPath = stagedDir;
-                TestContext.Progress.WriteLine($"Using native libraries from repo-pinned build: {stagedDir}");
+                Log.WriteLine($"Using native libraries from repo-pinned build: {stagedDir}");
                 return;
             }
 
-            TestContext.Progress.WriteLine(
+            Log.WriteLine(
                 $"No TESSERACT_NATIVE_DIR set and no staged build found at \"{stagedDir}\" -- " +
                 "falling back to the OS's normal library search.");
         }
