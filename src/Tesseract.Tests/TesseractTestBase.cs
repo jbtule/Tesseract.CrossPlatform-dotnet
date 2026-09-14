@@ -90,7 +90,7 @@ namespace Tesseract.Tests
             return Pix.LoadFromFile(testFilename);
         }
 
-        protected static void CheckResult(string resultFilename)
+        protected void CheckResult(string resultFilename)
         {
             CheckResult(resultFilename, testDifferenceHandler);
         }
@@ -102,12 +102,19 @@ namespace Tesseract.Tests
         /// <see cref="ConfidenceTolerantTestDifferenceHandler"/> instead of the default
         /// exact-match <see cref="FailTestDifferenceHandler"/>.
         /// </summary>
-        protected static void CheckResult(string resultFilename, ITestDifferenceHandler handler)
+        /// <remarks>
+        /// No longer static: <see cref="ITestDifferenceHandler.Execute"/> takes this
+        /// fixture's own <see cref="AssertionHelper.Assert"/> now (an instance property,
+        /// injected per-test - see TestDifferenceHandler.cs's own remarks for why), so
+        /// this can't stay static either. Every existing call site was already inside an
+        /// instance test method, so this needed no call-site changes at all.
+        /// </remarks>
+        protected void CheckResult(string resultFilename, ITestDifferenceHandler handler)
         {
             var actualResultFilename = TestResultRunFile(resultFilename);
             var expectedResultFilename = TestResultPath(resultFilename);
 
-            handler.Execute(actualResultFilename, expectedResultFilename);
+            handler.Execute(actualResultFilename, expectedResultFilename, Assert);
         }
 
         #endregion File Helpers

@@ -13,19 +13,31 @@ using System.Text.RegularExpressions;
 namespace Tesseract.Tests
 {
     // These handlers are plain helper objects (not [TestFixture]s), invoked from a
-    // fixture's test method via TesseractTestBase.CheckResult - real NUnit's Assert.Fail
-    // is fully static and callable from anywhere, but AnyUnit's Assert is an instance
-    // property only a fixture gets (injected per-test by the harness; see AssertionHelper).
-    // Assert.Fail(message) just throws AssertionException(message) internally either way,
-    // so throwing it directly here is exactly equivalent, without needing an Assert
-    // instance these classes have no way to obtain.
+    // fixture's test method via TesseractTestBase.CheckResult. Each Execute below now
+    // takes the calling fixture's own IAssert (AnyUnit's Assert is an instance property a
+    // fixture only gets via AssertionHelper, injected per-test by the harness - these
+    // classes have no such instance of their own to use, so it has to be handed in) and
+    // routes every real outcome - a passing comparison via assert.Okay(), a failing one
+    // via assert.Fail(message) - through it, instead of a bare `throw new
+    // AssertionException(...)` on failure and nothing at all on success.
+    //
+    // That "nothing at all on success" was a real, if quiet, bug: AnyUnit tracks whether a
+    // test made any real assertion specifically so it can tell "genuinely verified and
+    // passed" apart from "ran, threw nothing, verified nothing" (ResultKind.NoError vs
+    // Success - see AssertionHelper's own remarks). A CheckResult-based test's whole
+    // point IS a real assertion - it does fail loudly on a real regression - but every one
+    // of them was showing up as NoError instead of Success purely because the actual
+    // comparison lived down here, past Assert's own bookkeeping. assert.Fail(message)
+    // still throws the identical AssertionException a bare `throw` did (see AnyUnit.Run.
+    // Assert.Fail's own implementation), so a real failure looks exactly the same as
+    // before; only a real success is now honestly counted.
 
     /// <summary>
     /// Determines what action is taken when the test result doesn't match the expected (reference) result.
     /// </summary>
     public interface ITestDifferenceHandler
     {
-        void Execute(string actualResultFilename, string expectedResultFilename);
+        void Execute(string actualResultFilename, string expectedResultFilename, IAssert assert);
     }
 
     /// <summary>
@@ -33,7 +45,7 @@ namespace Tesseract.Tests
     /// </summary>
     public class FailTestDifferenceHandler : ITestDifferenceHandler
     {
-        public void Execute(string actualResultFilename, string expectedResultFilename)
+        public void Execute(string actualResultFilename, string expectedResultFilename, IAssert assert)
         {
             if (File.Exists(expectedResultFilename))
             {
@@ -41,7 +53,11 @@ namespace Tesseract.Tests
                 var expectedResult = TestUtils.NormaliseNewLine(File.ReadAllText(expectedResultFilename));
                 if (expectedResult != actualResult)
                 {
-                    throw new AssertionException($"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\".");
+                    assert.Fail($"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\".");
+                }
+                else
+                {
+                    assert.Okay();
                 }
             }
             else
@@ -88,7 +104,7 @@ namespace Tesseract.Tests
             this.tolerance = tolerance;
         }
 
-        public void Execute(string actualResultFilename, string expectedResultFilename)
+        public void Execute(string actualResultFilename, string expectedResultFilename, IAssert assert)
         {
             if (!File.Exists(expectedResultFilename))
             {
@@ -109,8 +125,9 @@ namespace Tesseract.Tests
             var expectedMasked = DecimalNumberPattern.Replace(expectedResult, "#");
             if (actualMasked != expectedMasked)
             {
-                throw new AssertionException(
+                assert.Fail(
                     $"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\" -- and not just by decimal-value drift (structure/text differs).");
+                return;
             }
 
             var actualNumbers = DecimalNumberPattern.Matches(actualResult)
@@ -123,10 +140,13 @@ namespace Tesseract.Tests
                 var delta = Math.Abs(actualNumbers[i] - expectedNumbers[i]);
                 if (delta > tolerance)
                 {
-                    throw new AssertionException(
+                    assert.Fail(
                         $"Numeric value #{i} in \"{actualResultFilename}\" differs from \"{expectedResultFilename}\" by {delta:0.######} (tolerance {tolerance}): expected {expectedNumbers[i]} but was {actualNumbers[i]}.");
+                    return;
                 }
             }
+
+            assert.Okay();
         }
     }
 
@@ -173,7 +193,7 @@ namespace Tesseract.Tests
                 : new HashSet<string>(StringComparer.Ordinal);
         }
 
-        public void Execute(string actualResultFilename, string expectedResultFilename)
+        public void Execute(string actualResultFilename, string expectedResultFilename, IAssert assert)
         {
             if (!File.Exists(expectedResultFilename))
             {
@@ -186,9 +206,12 @@ namespace Tesseract.Tests
             var expectedLines = SortedLines(expectedResultFilename);
             if (!actualLines.SequenceEqual(expectedLines, StringComparer.Ordinal))
             {
-                throw new AssertionException(
+                assert.Fail(
                     $"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\" -- and not just by line order or a known/named difference (a material difference remains).{DescribeDifference(expectedLines, actualLines)}");
+                return;
             }
+
+            assert.Okay();
         }
 
         // Names the actual differing lines, not just "a material difference remains" --
@@ -250,7 +273,7 @@ namespace Tesseract.Tests
     /// </summary>
     public class P4MergeTestDifferenceHandler : ITestDifferenceHandler
     {
-        public void Execute(string actualResultFilename, string expectedResultFilename)
+        public void Execute(string actualResultFilename, string expectedResultFilename, IAssert assert)
         {
             var actualResult = TestUtils.NormaliseNewLine(File.ReadAllText(actualResultFilename));
 
@@ -267,9 +290,12 @@ namespace Tesseract.Tests
                     expectedResult = TestUtils.NormaliseNewLine(File.ReadAllText(expectedResultFilename));
                     if (expectedResult != actualResult)
                     {
-                        throw new AssertionException($"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\".");
+                        assert.Fail($"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\".");
+                        return;
                     }
                 }
+
+                assert.Okay();
             }
             else
             {
