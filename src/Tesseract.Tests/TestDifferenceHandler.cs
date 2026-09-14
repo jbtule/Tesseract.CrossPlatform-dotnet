@@ -187,8 +187,42 @@ namespace Tesseract.Tests
             if (!actualLines.SequenceEqual(expectedLines, StringComparer.Ordinal))
             {
                 throw new AssertionException(
-                    $"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\" -- and not just by line order or a known/named difference (a material difference remains).");
+                    $"Expected results to be \"{expectedResultFilename}\" but was \"{actualResultFilename}\" -- and not just by line order or a known/named difference (a material difference remains).{DescribeDifference(expectedLines, actualLines)}");
             }
+        }
+
+        // Names the actual differing lines, not just "a material difference remains" --
+        // that message alone left every real investigation starting from a manual `diff`
+        // against two Run-directory files nobody's own error message ever pointed at. Set-
+        // based (Except), not a full multiset/positional diff: this dump has at most one
+        // line per variable name, so a plain set difference already identifies exactly
+        // which variable(s) changed value and how, which is the only thing that's ever
+        // actually differed here in practice. Capped, not unbounded -- a genuinely
+        // reshuffled/corrupt dump could otherwise turn this into a multi-hundred-line
+        // exception message.
+        private const int MaxLinesShown = 10;
+
+        private static string DescribeDifference(List<string> expectedLines, List<string> actualLines)
+        {
+            var onlyInExpected = expectedLines.Except(actualLines, StringComparer.Ordinal).ToList();
+            var onlyInActual = actualLines.Except(expectedLines, StringComparer.Ordinal).ToList();
+
+            var sb = new StringBuilder();
+            AppendLines(sb, "Expected but missing", onlyInExpected);
+            AppendLines(sb, "Actual but unexpected", onlyInActual);
+            return sb.ToString();
+        }
+
+        private static void AppendLines(StringBuilder sb, string label, List<string> lines)
+        {
+            if (lines.Count == 0)
+                return;
+
+            sb.Append("\n\n").Append(label).Append(" (").Append(lines.Count).Append("):");
+            foreach (var line in lines.Take(MaxLinesShown))
+                sb.Append("\n  ").Append(line);
+            if (lines.Count > MaxLinesShown)
+                sb.Append("\n  ... and ").Append(lines.Count - MaxLinesShown).Append(" more");
         }
 
         private List<string> SortedLines(string filename)
