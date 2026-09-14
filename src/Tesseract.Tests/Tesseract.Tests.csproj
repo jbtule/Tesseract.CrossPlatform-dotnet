@@ -22,10 +22,10 @@
          Tesseract.Tests.AnyUnit spike this replaces): this project already gets
          its native binaries from the repo's own stage/&lt;rid&gt;/native convention,
          via GlobalTestSetup's LibraryLoader.CustomSearchPath override.
-         Real 1.0.0 release from nuget.org now, not a local checkout. -->
-    <PackageReference Include="AnyUnit" Version="1.0.0" />
-    <PackageReference Include="AnyUnit.Style.Nunit" Version="1.0.0" />
-    <PackageReference Include="AnyUnit.Runner.Bootstrap" Version="1.0.0" />
+         Real 1.1.0 release from nuget.org now, not a local checkout. -->
+    <PackageReference Include="AnyUnit" Version="1.1.0" />
+    <PackageReference Include="AnyUnit.Style.Nunit" Version="1.1.0" />
+    <PackageReference Include="AnyUnit.Runner.Bootstrap" Version="1.1.0" />
   </ItemGroup>
 
   <!--
