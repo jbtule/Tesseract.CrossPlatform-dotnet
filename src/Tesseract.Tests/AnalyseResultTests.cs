@@ -191,9 +191,22 @@ namespace Tesseract.Tests
                         using (var elementImg = pageLayout.GetImage(level, padding, out x, out y)) {
                             var elementImgFilename = String.Format(@"AnalyseResult/GetImage/ResultIterator_Image_{0}_{1}_at_({2},{3}).png", level, padding, x, y);
 
-                            // TODO: Ensure generated pix is equal to expected pix, only saving it if it's not.
+                            // Was a "TODO: ensure equal to expected pix" - no assertion at
+                            // all. Real (if not pixel-exact/golden) regression coverage
+                            // instead: a valid crop has to be non-empty and has to actually
+                            // fit inside the page it was cropped from - this would have
+                            // caught, for example, a negative/out-of-bounds offset or a
+                            // degenerate zero-size image coming back from the native call.
+                            Assert.That(elementImg, Is.Not.Null);
+                            Assert.That(elementImg.Width, Is.GreaterThan(0));
+                            Assert.That(elementImg.Height, Is.GreaterThan(0));
+                            Assert.That(x, Is.GreaterThanOrEqualTo(0));
+                            Assert.That(y, Is.GreaterThanOrEqualTo(0));
+                            Assert.That(x + elementImg.Width, Is.LessThanOrEqualTo(img.Width));
+                            Assert.That(y + elementImg.Height, Is.LessThanOrEqualTo(img.Height));
+
                             var destFilename = TestResultRunFile(elementImgFilename);
-                            elementImg.Save(destFilename, ImageFormat.Png);                           
+                            elementImg.Save(destFilename, ImageFormat.Png);
                         }
                     }
                 }

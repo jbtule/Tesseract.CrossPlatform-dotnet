@@ -563,11 +563,18 @@ TestUtils.NormaliseNewLine(@"</word></line>
             }
         }
 
+        // Was construction-only (no Assert at all - a real NUnit-era "just don't throw"
+        // test): AnyUnit's own [ResultKind.NoError] honesty check (a test can't fake
+        // "passed" without ever calling Assert) is what surfaced this as a real, if
+        // minor, coverage gap. Same real check CanGetVersion already makes - confirms
+        // this datapath actually initializes the pinned tesseract build, not just "some
+        // engine, somehow" - rather than a hand-picked assertion invented just to have one.
         [Test]
         public void Initialise_ShouldStartEngine(
             [ValueSource("DataPaths")] string datapath)
         {
             using (var engine = new TesseractEngine(datapath, "eng", EngineMode.Default)) {
+                Assert.That(engine.Version, Does.StartWith(TestEnvironment.PinnedTesseractVersion));
             }
         }
 

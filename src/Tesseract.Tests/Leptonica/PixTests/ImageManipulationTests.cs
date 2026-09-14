@@ -16,6 +16,22 @@ namespace Tesseract.Tests.Leptonica.PixTests
     {
         const string ResultsDirectory = @"Results/ImageManipulation/";
 
+        // A cheap "did this actually do something" check, not a golden-image comparison
+        // (that would need new golden fixtures, real effort tracked separately) - reads
+        // a Pix's raw pixel bytes back out via Marshal.Copy so Rotate/RemoveLines/
+        // Despeckle below can assert their output genuinely differs from (or, for the
+        // dimension checks alongside it, is validly shaped relative to) their input,
+        // instead of asserting nothing at all. Real regression coverage (a rotation/
+        // filter silently turning into a no-op) even without a golden reference image.
+        private static byte[] GetPixBytes(Pix pix)
+        {
+            var data = pix.GetData();
+            var byteLength = data.WordsPerLine * 4 * pix.Height;
+            var bytes = new byte[byteLength];
+            Marshal.Copy(data.Data, bytes, 0, byteLength);
+            return bytes;
+        }
+
         [Test]
         [RequiresImageCodecs]
         public void DescewTest()
@@ -116,7 +132,36 @@ namespace Tesseract.Tests.Leptonica.PixTests
             {
                 using (var result = sourcePix.Rotate(angleAsRadians, RotationMethod.AreaMap))
                 {
-                    // TODO: Visualy confirm successful rotation and then setup an assertion to compare that result is the same.
+                    // Was a "TODO: visually confirm" - no assertion at all. Real (if not
+                    // pixel-exact/golden) regression coverage instead. Exact width/height
+                    // only for the three angles this suite tests that are exact multiples
+                    // of 90 (90/180/270 - Pix.Rotate's own "handle special case of
+                    // orthogonal rotations" branch routes those through pixRotateOrth, a
+                    // simple/discrete transform that swaps width/height for a 90/270 turn
+                    // and leaves them alone for 180): every other angle here (45, 80) goes
+                    // through Leptonica's general area-map path instead, which - confirmed
+                    // empirically, not assumed from the wrapper's own width/height
+                    // parameters alone - does NOT keep the source canvas size, growing it
+                    // instead to fit the rotated content's own bounding box; asserting
+                    // exact dimensions there would just be asserting a wrong assumption.
+                    // What's still true for every angle: a real rotation - every one
+                    // tested here is well clear of "no rotation at all" - has to actually
+                    // move content, so the raw pixel data can't come back byte-identical
+                    // to the source (a stale no-op rotation would still fail this).
+                    var isMultipleOf90 = angle % 90 == 0;
+                    if (isMultipleOf90)
+                    {
+                        var isQuarterTurn = angle == 90 || angle == 270;
+                        Assert.That(result.Width, Is.EqualTo(isQuarterTurn ? sourcePix.Height : sourcePix.Width));
+                        Assert.That(result.Height, Is.EqualTo(isQuarterTurn ? sourcePix.Width : sourcePix.Height));
+                    }
+                    else
+                    {
+                        Assert.That(result.Width, Is.GreaterThan(0));
+                        Assert.That(result.Height, Is.GreaterThan(0));
+                    }
+                    Assert.That(GetPixBytes(result), Is.Not.EqualTo(GetPixBytes(sourcePix)));
+
                     var filename = String.Format(FileNameFormat, angle);
                     SaveResult(result, filename);
                 }
@@ -142,7 +187,19 @@ namespace Tesseract.Tests.Leptonica.PixTests
                             // rotate 90 degrees ccw
                             using (var result3 = result2.Rotate90(-1))
                             {
-                                // TODO: Visualy confirm successful rotation and then setup an assertion to compare that result is the same.
+                                // Was a "TODO: visually confirm" - no assertion at all. Real
+                                // (if not pixel-exact/golden) regression coverage instead:
+                                // the double rotate-90/-90 round trip means result3 is back
+                                // to source's own orientation, so its dimensions/depth have
+                                // to match sourcePix's exactly - and table.png's whole point
+                                // is the horizontal/vertical border lines RemoveLines is
+                                // meant to strip, so a real removal has to change at least
+                                // some pixel from the source.
+                                Assert.That(result3.Width, Is.EqualTo(sourcePix.Width));
+                                Assert.That(result3.Height, Is.EqualTo(sourcePix.Height));
+                                Assert.That(result3.Depth, Is.EqualTo(sourcePix.Depth));
+                                Assert.That(GetPixBytes(result3), Is.Not.EqualTo(GetPixBytes(sourcePix)));
+
                                 SaveResult(result3, "tableBordersRemoved.png");
                             }
                         }
@@ -161,7 +218,18 @@ namespace Tesseract.Tests.Leptonica.PixTests
                 // remove speckles
                 using (var result = sourcePix.Despeckle(Pix.SEL_STR2, 2))
                 {
-                    // TODO: Visualy confirm successful despeckle and then setup an assertion to compare that result is the same.
+                    // Was a "TODO: visually confirm" - no assertion at all. Real (if not
+                    // pixel-exact/golden) regression coverage instead: despeckling doesn't
+                    // change canvas geometry (no Depth check alongside it, deliberately -
+                    // confirmed empirically that Pix.SEL_STR2-based Despeckle always
+                    // returns a 1bpp binary result regardless of the source's own depth,
+                    // a real Leptonica contract, not an oversight), and w91frag.jpg's
+                    // whole point is the speckle noise Despeckle is meant to remove, so a
+                    // real removal has to change at least some pixel from the source.
+                    Assert.That(result.Width, Is.EqualTo(sourcePix.Width));
+                    Assert.That(result.Height, Is.EqualTo(sourcePix.Height));
+                    Assert.That(GetPixBytes(result), Is.Not.EqualTo(GetPixBytes(sourcePix)));
+
                     SaveResult(result, "w91frag-despeckled.png");
                 }
             }
