@@ -649,13 +649,28 @@ TestUtils.NormaliseNewLine(@"</word></line>
         public void CanSetDoubleVariable(string variableName, double variableValue)
         {
             using (var engine = CreateEngine()) {
-                var variableWasSet = engine.SetVariable(variableName, variableValue);
-                Assert.That(variableWasSet, Is.True, "Failed to set variable '{0}'.", variableName);
-                double result;
-                if (engine.TryGetDoubleVariable(variableName, out result)) {
-                    Assert.That(result, Is.EqualTo(variableValue));
-                } else {
-                    Assert.Fail($"Failed to retrieve value for '{variableName}'.");
+                // tesseract's parameter registry is process-global (see
+                // UnorderedLinesTestDifferenceHandler's own remarks) - SetVariable here
+                // isn't scoped to this engine instance or this test, it leaks into every
+                // later test in the same process, most visibly CanPrintVariables' own
+                // golden-fixture dump. Restoring whatever this variable held right before
+                // this test touched it - not a hardcoded "the real default", which would
+                // just reintroduce the same leak one level up if two of these tests ever
+                // ran back to back - keeps this test's own footprint exactly zero
+                // regardless of what ran before or after it.
+                double original;
+                engine.TryGetDoubleVariable(variableName, out original);
+                try {
+                    var variableWasSet = engine.SetVariable(variableName, variableValue);
+                    Assert.That(variableWasSet, Is.True, "Failed to set variable '{0}'.", variableName);
+                    double result;
+                    if (engine.TryGetDoubleVariable(variableName, out result)) {
+                        Assert.That(result, Is.EqualTo(variableValue));
+                    } else {
+                        Assert.Fail($"Failed to retrieve value for '{variableName}'.");
+                    }
+                } finally {
+                    engine.SetVariable(variableName, original);
                 }
             }
         }
@@ -668,13 +683,21 @@ TestUtils.NormaliseNewLine(@"</word></line>
         public void CanSetIntegerVariable(string variableName, int variableValue)
         {
             using (var engine = CreateEngine()) {
-                var variableWasSet = engine.SetVariable(variableName, variableValue);
-                Assert.That(variableWasSet, Is.True, "Failed to set variable '{0}'.", variableName);
-                int result;
-                if (engine.TryGetIntVariable(variableName, out result)) {
-                    Assert.That(result, Is.EqualTo(variableValue));
-                } else {
-                    Assert.Fail($"Failed to retrieve value for '{variableName}'.");
+                // See CanSetDoubleVariable's own comment - same process-global leak,
+                // same restore-what-we-found fix.
+                int original;
+                engine.TryGetIntVariable(variableName, out original);
+                try {
+                    var variableWasSet = engine.SetVariable(variableName, variableValue);
+                    Assert.That(variableWasSet, Is.True, "Failed to set variable '{0}'.", variableName);
+                    int result;
+                    if (engine.TryGetIntVariable(variableName, out result)) {
+                        Assert.That(result, Is.EqualTo(variableValue));
+                    } else {
+                        Assert.Fail($"Failed to retrieve value for '{variableName}'.");
+                    }
+                } finally {
+                    engine.SetVariable(variableName, original);
                 }
             }
         }
